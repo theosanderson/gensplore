@@ -193,7 +193,12 @@ const codonToAminoAcid = (codon) => {
   }
 };
 
-const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, searchInput }) => {
+const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, searchInput, renderProperly }) => {
+  if (!renderProperly)
+  {
+    return <div style={{height:60, borderBottom: "1px solid #eee"}}
+    id={`row-${rowId}`}></div>
+  }
 
   const isSelected = searchInput>=rowStart && searchInput<=rowEnd;
   if(isSelected){
@@ -545,6 +550,39 @@ function App() {
   // safely convert searchInput to int
   const intSearchInput = parseInt(searchInput);
 
+  const [whereOnPage, setWhereOnPage] = useState(0);
+
+  // listen to scroll
+  function getDocHeight() {
+    var D = document;
+    return Math.max(
+        Math.max(D.body.scrollHeight, D.documentElement.scrollHeight),
+        Math.max(D.body.offsetHeight, D.documentElement.offsetHeight),
+        Math.max(D.body.clientHeight, D.documentElement.clientHeight)
+    );
+  }
+  useEffect(() => {
+    // capture how far down the page we are as a percentage
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset;
+      const winHeight = window.innerHeight;
+      const docHeight = getDocHeight();
+      const totalDocScrollLength = docHeight - winHeight;
+      const scrollPosition = scrollTop / totalDocScrollLength;
+      // if difference is more than 1%, update
+      if (Math.abs(scrollPosition - whereOnPage) > 0.03) {
+        setWhereOnPage(scrollPosition);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+
+
+
 
 
   useEffect(() => {
@@ -578,12 +616,18 @@ function App() {
     const row = Math.floor(intSearchInput / rowWidth);
     console.log("row", row);
   
-    const rowElement = document.getElementById(`row-${row}`);
-    if (!rowElement) return;
+    
 
     setTimeout(() => {
+      const rowElement = document.getElementById(`row-${row}`);
+    if (!rowElement) return;
       rowElement.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 100);
+    setTimeout(() => {
+      const rowElement = document.getElementById(`row-${row}`);
+      if (!rowElement) return;
+      rowElement.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 1000);
   }, [intSearchInput]);
 
   if (!genbankData ) {
@@ -646,6 +690,9 @@ function App() {
             setHoveredInfo={setHoveredInfo}
             rowId={index}
             searchInput={intSearchInput-1}
+            renderProperly={(Math.abs(whereOnPage - (index / rowData.length)) < 0.2)
+            || (row.rowStart>=intSearchInput && row.rowEnd<=intSearchInput)}
+          
             />
           ))}
           </div>
