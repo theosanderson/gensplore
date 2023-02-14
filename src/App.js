@@ -571,6 +571,7 @@ function App() {
       const scrollPosition = scrollTop / totalDocScrollLength;
       // if difference is more than 1%, update
       if (Math.abs(scrollPosition - whereOnPage) > 0.05) {
+        // debounce
         setWhereOnPage(scrollPosition);
       }
     };
@@ -578,7 +579,7 @@ function App() {
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [whereOnPage]);
 
 
 
