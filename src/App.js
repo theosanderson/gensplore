@@ -579,16 +579,12 @@ function App() {
     console.log("row", row);
   
     const rowElement = document.getElementById(`row-${row}`);
-    const yPos = rowElement.getBoundingClientRect().top;
-    // screen height
-    const screenHeight = window.innerHeight;
+    if (!rowElement) return;
+
     setTimeout(() => {
-      window.scrollTo({
-        top: yPos-screenHeight/2,
-        behavior: "smooth"
-      });
+      rowElement.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 100);
-  }, [intSearchInput, rowWidth]);
+  }, [intSearchInput]);
 
   if (!genbankData ) {
     return <div>Loading...</div>;
