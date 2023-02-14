@@ -567,8 +567,8 @@ function App() {
   
   let  rowWidth= Math.floor(width*.0965);
   // rowWidth minimum 50
-  if (rowWidth < 50) {
-    rowWidth = 50;
+  if (rowWidth < 40) {
+    rowWidth = 40;
   }
 
 
