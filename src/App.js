@@ -4,7 +4,7 @@ import './App.css';
 
 import { genbankToJson } from "bio-parsers";
 import { useMeasure } from 'react-use'; // or just 'react-use-measure'
-
+import {FaSearch,FaTimes} from 'react-icons/fa';
 
 
 const Tooltip = ({ hoveredInfo }) => {
@@ -82,6 +82,8 @@ const getColor = (feature) => {
           return "#ddffdd";
         case "nsp16":
           return "#ffeeee";
+        case "nsp13":
+          return "#ff7f50";
         
         default:
           return "#c39797";
@@ -191,7 +193,7 @@ const codonToAminoAcid = (codon) => {
   }
 };
 
-const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowWidth }) => {
+const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId }) => {
 
   const fullSequence = parsedSequence.sequence;
   const rowSequence = fullSequence.slice(rowStart, rowEnd);
@@ -390,7 +392,7 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowWidth 
 
   // Concatenate sequence characters and ticks with SVG
   return (
-    <div style={{ position: "relative", height: `${height}px` }}>
+    <div style={{ position: "relative", height: `${height}px` }} id={`row-${rowId}`}>
       <svg
         width={width+40}
         height={height - 20}
@@ -413,13 +415,74 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowWidth 
   );
 };
 
+function SearchPanel({ goToNucleotide,searchPanelOpen,setSearchPanelOpen }) {
+   
+  const [inputValue, setInputValue] = useState("");
+
+  const handleInputChange = (event) => {
+    setInputValue(event.target.value);
+    goToNucleotide(event.target.value);
+  };
+
+  return (
+    <div className="bg-gray-100 p-1 text-sm">
+      {searchPanelOpen ? ((<>
+      <input
+        type="text"
+        value={inputValue}
+        onChange={handleInputChange}
+        placeholder="nuc index"
+        id="search-input"
+      />
+      <button 
+      className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center"
+      onClick={() => setSearchPanelOpen(false)}
+      >
+        <FaTimes className="mr-2" />
+      </button></>
+      )) : (
+        <button
+          className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center"
+          onClick={() => setSearchPanelOpen(true)}
+        >
+         <FaSearch className="mr-2" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+
+
 
 
 function App() {
+ 
+   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
+   // detect ctrl-F and open search panel
+    useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.keyCode === 70) {
+        e.preventDefault();
+        setSearchPanelOpen(true);
+        // focus on search input
+        setTimeout(() => {
+          document.getElementById("search-input").focus();
+        }
+        , 100);
+    }
+
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
   const [ref, { width }] = useMeasure();
   //console.log("width", width);
   const [hoveredInfo, setHoveredInfo] = useState(null);
   const [genbankData, setGenbankData] = useState(null);
+
 
   useEffect(() => {
     const loadGenbankFile = async () => {
@@ -468,9 +531,33 @@ function App() {
   }
 
   return (
-    <div className="w-full h-full p-5">
+    <div className="w-full p-5">
+      {true && (
+        <div className="fixed top-0 right-0 z-10">
+          <SearchPanel
+          searchPanelOpen={searchPanelOpen}
+          setSearchPanelOpen={setSearchPanelOpen}
+            goToNucleotide={(nucleotide) => {
+              const row = Math.floor(nucleotide / rowWidth);
+              console.log("row", row);
+            
+              const rowElement = document.getElementById(`row-${row}`);
+              const yPos = rowElement.getBoundingClientRect().top;
+              setTimeout(() => {
+                window.scrollTo({
+                  top: yPos,
+                  behavior: "smooth"
+                });
+              }, 100);
+            }
+            }
+          />
+        </div>
+      )}
+
+
      
-    <div ref={ref} className="w-full h-full">
+    <div ref={ref} className="w-full">
       <Tooltip hoveredInfo={hoveredInfo} />
       {genbankData && (
         <div>
@@ -488,6 +575,7 @@ function App() {
             <SingleRow key={index} parsedSequence={genbankData.parsedSequence} rowStart={row.rowStart} rowEnd={row.rowEnd}
             rowWidth={rowWidth}
             setHoveredInfo={setHoveredInfo}
+            rowId={index}
             />
           ))}
           </div>
