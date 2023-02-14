@@ -441,7 +441,7 @@ function App() {
   if (!genbankData ) {
     return <div>Loading...</div>;
   }
-  let  rowWidth= Math.floor(width*.097);
+  let  rowWidth= Math.floor(width*.0965);
   // rowWidth minimum 50
   if (rowWidth < 50) {
     rowWidth = 50;
