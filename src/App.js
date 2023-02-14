@@ -580,9 +580,11 @@ function App() {
   
     const rowElement = document.getElementById(`row-${row}`);
     const yPos = rowElement.getBoundingClientRect().top;
+    // screen height
+    const screenHeight = window.innerHeight;
     setTimeout(() => {
       window.scrollTo({
-        top: yPos,
+        top: yPos-screenHeight/2,
         behavior: "smooth"
       });
     }, 100);
