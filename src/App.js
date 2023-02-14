@@ -12,13 +12,10 @@ const Tooltip = ({ hoveredInfo }) => {
 
   const tooltipStyles = {
     position: "absolute",
-    top: `${tooltipPosition.y - 10}px`,
-    left: `${tooltipPosition.x + 10}px`,
+    top: `${tooltipPosition.y + 20}px`,
+    left: `${tooltipPosition.x + 0}px`,
     visibility: hoveredInfo ? "visible" : "hidden",
-    background: "white",
-    color: "black",
-    padding: "5px",
-    border: "1px solid black",
+    
     zIndex: 1000,
   };
 
@@ -35,16 +32,60 @@ const Tooltip = ({ hoveredInfo }) => {
   }, []);
 
   return (
-    <div style={tooltipStyles}>
+    <div style={tooltipStyles} className="text-sm bg-gray-100 p-2 rounded">
       {hoveredInfo && <span>{hoveredInfo.label}</span>}
     </div>
   );
 };
 
-const getColor = (type) => {
-  switch (type) {
+const getColor = (feature) => {
+  switch (feature.type) {
     case "CDS":
-      return "red";
+      switch (feature.name){
+        case "S":
+          return "#ff7373";
+        case "nsp3":
+          return "#d3ffce"
+
+        case "leader":
+          return "#ff7f50";
+
+        case "nsp2":
+          return "#ddffdd";
+        
+        case "nsp4":
+          return "#ff7373";
+
+        
+
+        case "N":
+          return "#7fffd4";
+        case "E":
+          return "#ff7f50";
+        case "M":
+          return "#eeee88";
+        case "nsp12; RdRp":
+          return "#ff7f50"
+        case "nsp6":
+          return "#ee99ee"
+        case "nsp7":
+          return "#99ee99"
+
+        case "nsp8":
+          return "#ff7373";
+        case "nsp10":
+          return "#d3ffce";
+
+        case "nsp14":
+          return "#ff7f50";
+        case "nsp15":
+          return "#ddffdd";
+        case "nsp16":
+          return "#ffeeee";
+        
+        default:
+          return "#c39797";
+      }
     case "gene":
       return "blue";
     case "misc_feature":
@@ -55,6 +96,98 @@ const getColor = (type) => {
       return "orange";
     default:
       return "black";
+  }
+};
+
+const codonToAminoAcid = (codon) => {
+  switch (codon) {
+    case "TTT":
+          case "TTC":
+      return "F";
+    case "TTA":
+    case "TTG":
+    case "CTT":
+    case "CTC":
+    case "CTA":
+    case "CTG":
+      return "L";
+    case "ATT":
+    case "ATC":
+    case "ATA":
+      return "I";
+    case "ATG":
+      return "M";
+    case "GTT":
+    case "GTC":
+    case "GTA":
+    case "GTG":
+      return "V";
+    case "TCT":
+    case "TCC":
+    case "TCA":
+    case "TCG":
+    case "AGT":
+    case "AGC":
+      return "S";
+    case "CCT":
+    case "CCC":
+    case "CCA":
+    case "CCG":
+      return "P";
+    case "ACT":
+    case "ACC":
+    case "ACA":
+    case "ACG":
+      return "T";
+    case "GCT":
+    case "GCC":
+    case "GCA":
+    case "GCG":
+      return "A";
+    case "TAT":
+    case "TAC":
+      return "Y";
+    case "TAA":
+    case "TAG":
+    case "TGA":
+      return "STOP";
+    case "CAT":
+    case "CAC":
+      return "H";
+    case "CAA":
+    case "CAG":
+      return "Q";
+    case "AAT":
+    case "AAC":
+      return "N";
+    case "AAA":
+    case "AAG":
+      return "K";
+    case "GAT":
+    case "GAC":
+      return "D";
+    case "GAA":
+    case "GAG":
+      return "E";
+    case "TGT":
+    case "TGC":
+      return "C";
+    case "TGG":
+      return "W";
+    case "CGT":
+    case "CGC":
+    case "CGA":
+    case "CGG":
+    case "AGA":
+    case "AGG":
+      return "R";
+    case "GGT":
+    case "GGC":
+    case "GGA":
+    case "GGG":
+      return "G";
+    default:
+      return "X";
   }
 };
 
@@ -75,6 +208,7 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowWidth 
   if (rowStart==0){
     //console.log(relevantFeatures);
   }
+
   const featureBlocks = relevantFeatures.map((feature, i) => {
     let startIsActual = true;
     let startPos;
@@ -102,14 +236,13 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowWidth 
       start: feature.start,
       end: feature.end,
     }];
-    const forTranslation = feature.notes && feature.notes.translation ? feature.notes.translation[0] : null;
-    // create an object which maps nucleotide positions on this row to the corresponding amino acid
+    
     // positions in the translation
     // for each location in this row: check if it is in any of the locations, if so, figure out which codon it is in
     // and add it to the map
 
     const codonMap = [];
-    if (forTranslation){
+    if (feature.type=="CDS" ){
 
     for (let j = rowStart; j < rowEnd; j++) {
       let positionSoFar = 0;
@@ -123,9 +256,14 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowWidth 
           if (frame != 1) {
             continue;
           }
+
+
+          const codonSeq = fullSequence.slice(codonStart-1, codonEnd );
+          //console.log(codonSeq);
+
           
-          const aminoAcid = forTranslation[codonIndex];
-         
+          const aminoAcid = codonToAminoAcid(codonSeq);
+          //const aminoAcid = forTranslation[codonIndex];
           
           codonMap.push({
             start: codonStart- rowStart,
@@ -136,7 +274,7 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowWidth 
           });
         
         }
-        positionSoFar += locations[k].end - locations[k].start ;
+        positionSoFar += locations[k].end - locations[k].start +1;
       }
     }
   }
@@ -194,6 +332,7 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowWidth 
     const x = i * 10;
     return (
       <text key={i} x={x} y={10} textAnchor="middle" fontSize="12"
+     
       onMouseEnter={
         () => setHoveredInfo({
          
@@ -217,7 +356,7 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowWidth 
     return (
       <g key={i}>
         <rect x={x-extraFeat} y={y} width={width+extraFeat*2} height={10} fill={
-          getColor(feature.type)
+          getColor(feature)
         } />
         <text x={x-10} y={y} textAnchor="left" fontSize="10"
         >
@@ -226,13 +365,15 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowWidth 
         {
           feature.codonMap.map((codon, j) => {
             return (
-              <text key={j} x={codon.start*10} y={y+10} textAnchor="middle" fontSize="10"
+              <text key={j} x={codon.start*10} y={y+9} textAnchor="middle" fontSize="10"
               onMouseOver={
                 () => setHoveredInfo({
                   label: `${codon.gene}: ${codon.aminoAcid}${codon.codonIndex+1}`
                 })
               }
               onMouseLeave={() => setHoveredInfo(null)}
+
+      fillOpacity={0.75}
 
               >
                 {codon.aminoAcid}
@@ -251,16 +392,20 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowWidth 
   return (
     <div style={{ position: "relative", height: `${height}px` }}>
       <svg
-        width={width+10}
+        width={width+40}
         height={height - 20}
         style={{ position: "absolute", top: 0, left: 0 }}
       >
+        <g
+        fillOpacity={0.7}
+        >
         <g transform={`translate(${extraPadding}, ${height-40})`}>{ticks}</g>
         {// line above ticks 
         }
-        <line x1={0+extraPadding} y1={height-40} x2={width+extraPadding} y2={height-40} 
-        x2={width}
+        <line x1={0+extraPadding} y1={height-40} x2={width+extraPadding+0} y2={height-40} 
+       
         stroke="black" />
+        </g>
         <g transform={`translate(${extraPadding}, ${height-55})`}>{chars}</g>
         <g transform={`translate(${extraPadding}, 5)`}>{featureBlocksSVG}</g>
       </svg>
@@ -308,14 +453,24 @@ function App() {
   for (let i = 0; i < sequenceLength; i += rowWidth) {
     rowData.push({
       rowStart: i,
-      rowEnd: i + rowWidth,
+      rowEnd: (i + rowWidth > sequenceLength ? sequenceLength : i + rowWidth)
     });
   }
 
+  if(!width){
+    return (
+      <div className="w-full h-full p-5">
+        <div ref={ref} className="w-full h-full" />
+        Loading...
+      </div>
+    );
+
+  }
 
   return (
     <div className="w-full h-full p-5">
-    <div ref={ref} >
+     
+    <div ref={ref} className="w-full h-full">
       <Tooltip hoveredInfo={hoveredInfo} />
       {genbankData && (
         <div>
