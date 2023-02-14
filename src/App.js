@@ -570,7 +570,7 @@ function App() {
       const totalDocScrollLength = docHeight - winHeight;
       const scrollPosition = scrollTop / totalDocScrollLength;
       // if difference is more than 1%, update
-      if (Math.abs(scrollPosition - whereOnPage) > 0.03) {
+      if (Math.abs(scrollPosition - whereOnPage) > 0.05) {
         setWhereOnPage(scrollPosition);
       }
     };
