@@ -361,6 +361,7 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
     const width = (feature.end - feature.start) * 10;
     const y = 7 + i * 15;
     const extraFeat=5;
+    const codonPad =15;
     
     return (
       <g key={i}>
@@ -389,8 +390,26 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
               </text>
             );
           }
+
           )
 
+        }
+        {
+          feature.codonMap.map((codon, j) => {
+            // create a line either side of the codon
+
+            return (
+              <g key={j}>
+                {codon.start>1 && codon.start<3 &&
+                <line x1={codon.start*10-codonPad} y1={y} x2={codon.start*10-codonPad} y2={y+10} stroke="black" strokeOpacity={0.1} />
+          }
+                <line x1={codon.start*10+codonPad} y1={y} x2={codon.start*10+codonPad} y2={y+10} stroke="black" strokeOpacity={0.1} />
+              </g>
+            );
+
+        }
+        
+        )
         }
       </g>
     );
@@ -404,7 +423,7 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
       <line x1={(searchInput-rowStart)*10} y1={0} x2={(searchInput-rowStart)*10} y2={10} stroke="red" />
       {//rect behind tick
   }
-      <rect x={(searchInput-rowStart)*10-30} y={0} width={60} height={30} fill="#ffffee" zIndex={-1} />
+      <rect x={(searchInput-rowStart)*10-30} y={0} width={60} height={30} fill="#ffffee"  />
       <text x={(searchInput-rowStart)*10} y={20} textAnchor="middle" fontSize="10"
       fill="red"
       >
@@ -429,7 +448,9 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
         <g
         fillOpacity={0.7}
         >
-        <g transform={`translate(${extraPadding}, ${height-40})`} zIndex={-5}>{ticks}</g>
+        <g transform={`translate(${extraPadding}, ${height-40})`} style={
+          {zIndex:-5}
+        }>{ticks}</g>
         {searchTick && <g transform={`translate(${extraPadding}, ${height-40})`}>{searchTick}</g>
 }
         {// line above ticks 
@@ -465,6 +486,8 @@ function SearchPanel({ searchPanelOpen,setSearchPanelOpen,searchInput,setSearchI
         onChange={handleInputChange}
         placeholder="nuc index"
         id="search-input"
+        // don't autocomplete
+        autoComplete="off"
       />
       <button 
       className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center"
