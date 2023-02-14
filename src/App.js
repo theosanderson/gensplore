@@ -500,6 +500,8 @@ function App() {
         // focus on search input
         setTimeout(() => {
           document.getElementById("search-input").focus();
+          // select all text
+          document.getElementById("search-input").select();
         }
         , 100);
     }
