@@ -491,7 +491,8 @@ function SearchPanel({ searchPanelOpen,setSearchPanelOpen,searchInput,setSearchI
       />
       <button 
       className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center"
-      onClick={() => setSearchPanelOpen(false)}
+      onClick={() => {setSearchPanelOpen(false)
+      setSearchInput(null)}}
       >
         <FaTimes className="mr-2" />
       </button></>
