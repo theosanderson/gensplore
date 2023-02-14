@@ -5,7 +5,7 @@ import './App.css';
 import { genbankToJson } from "bio-parsers";
 import { useMeasure } from 'react-use'; // or just 'react-use-measure'
 import {FaSearch,FaTimes} from 'react-icons/fa';
-
+import {DebounceInput} from 'react-debounce-input';
 
 const Tooltip = ({ hoveredInfo }) => {
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -193,7 +193,14 @@ const codonToAminoAcid = (codon) => {
   }
 };
 
-const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId }) => {
+const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, searchInput }) => {
+
+  const isSelected = searchInput>=rowStart && searchInput<=rowEnd;
+  if(isSelected){
+    console.log("selected");
+  }
+
+
 
   const fullSequence = parsedSequence.sequence;
   const rowSequence = fullSequence.slice(rowStart, rowEnd);
@@ -389,10 +396,31 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId }) 
     );
   });
 
+  // create a tick specifically at searchInput
+  let searchTick = null;
+  if (searchInput != null && searchInput >= rowStart && searchInput <= rowEnd) {
+   searchTick = (
+    <g key={-1}>
+      <line x1={(searchInput-rowStart)*10} y1={0} x2={(searchInput-rowStart)*10} y2={10} stroke="red" />
+      {//rect behind tick
+  }
+      <rect x={(searchInput-rowStart)*10-30} y={0} width={60} height={30} fill="#ffffee" zIndex={-1} />
+      <text x={(searchInput-rowStart)*10} y={20} textAnchor="middle" fontSize="10"
+      fill="red"
+      >
+        {searchInput+1}
+      </text>
+    </g>
+  );
+  }
+
 
   // Concatenate sequence characters and ticks with SVG
   return (
-    <div style={{ position: "relative", height: `${height}px` }} id={`row-${rowId}`}>
+    <div style={{ position: "relative", height: `${height}px`,
+    ...(isSelected? {backgroundColor: "#ffffee"} : {})
+    
+    }} id={`row-${rowId}`}>
       <svg
         width={width+40}
         height={height - 20}
@@ -401,13 +429,16 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId }) 
         <g
         fillOpacity={0.7}
         >
-        <g transform={`translate(${extraPadding}, ${height-40})`}>{ticks}</g>
+        <g transform={`translate(${extraPadding}, ${height-40})`} zIndex={-5}>{ticks}</g>
+        {searchTick && <g transform={`translate(${extraPadding}, ${height-40})`}>{searchTick}</g>
+}
         {// line above ticks 
         }
         <line x1={0+extraPadding} y1={height-40} x2={width+extraPadding+0} y2={height-40} 
        
         stroke="black" />
         </g>
+
         <g transform={`translate(${extraPadding}, ${height-55})`}>{chars}</g>
         <g transform={`translate(${extraPadding}, 5)`}>{featureBlocksSVG}</g>
       </svg>
@@ -415,21 +446,22 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId }) 
   );
 };
 
-function SearchPanel({ goToNucleotide,searchPanelOpen,setSearchPanelOpen }) {
+function SearchPanel({ searchPanelOpen,setSearchPanelOpen,searchInput,setSearchInput }) {
    
-  const [inputValue, setInputValue] = useState("");
 
   const handleInputChange = (event) => {
-    setInputValue(event.target.value);
-    goToNucleotide(event.target.value);
+    setSearchInput(event.target.value);
+  
   };
 
   return (
     <div className="bg-gray-100 p-1 text-sm">
       {searchPanelOpen ? ((<>
-      <input
+      <DebounceInput
+      minLength={2}
+        debounceTimeout={300}
         type="text"
-        value={inputValue}
+        value={searchInput}
         onChange={handleInputChange}
         placeholder="nuc index"
         id="search-input"
@@ -482,6 +514,11 @@ function App() {
   //console.log("width", width);
   const [hoveredInfo, setHoveredInfo] = useState(null);
   const [genbankData, setGenbankData] = useState(null);
+  const [searchInput, setSearchInput] = useState(null);
+
+  // safely convert searchInput to int
+  const intSearchInput = parseInt(searchInput);
+
 
 
   useEffect(() => {
@@ -501,13 +538,32 @@ function App() {
     loadGenbankFile();
   }, []);
 
-  if (!genbankData ) {
-    return <div>Loading...</div>;
-  }
+  
   let  rowWidth= Math.floor(width*.0965);
   // rowWidth minimum 50
   if (rowWidth < 50) {
     rowWidth = 50;
+  }
+
+
+  // useEffect
+  useEffect(() => {
+    if(!intSearchInput) return;
+    const row = Math.floor(intSearchInput / rowWidth);
+    console.log("row", row);
+  
+    const rowElement = document.getElementById(`row-${row}`);
+    const yPos = rowElement.getBoundingClientRect().top;
+    setTimeout(() => {
+      window.scrollTo({
+        top: yPos,
+        behavior: "smooth"
+      });
+    }, 100);
+  }, [intSearchInput, rowWidth]);
+
+  if (!genbankData ) {
+    return <div>Loading...</div>;
   }
 
   const rowData = [];
@@ -535,22 +591,11 @@ function App() {
       {true && (
         <div className="fixed top-0 right-0 z-10">
           <SearchPanel
+          searchInput = {searchInput}
+          setSearchInput = {setSearchInput}
           searchPanelOpen={searchPanelOpen}
           setSearchPanelOpen={setSearchPanelOpen}
-            goToNucleotide={(nucleotide) => {
-              const row = Math.floor(nucleotide / rowWidth);
-              console.log("row", row);
-            
-              const rowElement = document.getElementById(`row-${row}`);
-              const yPos = rowElement.getBoundingClientRect().top;
-              setTimeout(() => {
-                window.scrollTo({
-                  top: yPos,
-                  behavior: "smooth"
-                });
-              }, 100);
-            }
-            }
+          
           />
         </div>
       )}
@@ -576,6 +621,7 @@ function App() {
             rowWidth={rowWidth}
             setHoveredInfo={setHoveredInfo}
             rowId={index}
+            searchInput={intSearchInput-1}
             />
           ))}
           </div>
