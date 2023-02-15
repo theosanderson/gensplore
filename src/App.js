@@ -198,6 +198,7 @@ const codonToAminoAcid = (codon) => {
 const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, searchInput , zoomLevel}) => {
 
   const zoomFactor = 2**zoomLevel;
+  const sep = 10 * zoomFactor;
 
 
   const isSelected = searchInput>=rowStart && searchInput<=rowEnd;
@@ -318,7 +319,7 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
   const extraPadding = 25;
 
   // Calculate dimensions and tick interval
-  const width = rowSequence.length * 10; // 10 pixels per character
+  const width = rowSequence.length * sep; // 10 pixels per character
   let height = 70 + featureBlocks.length * 20;
   const numTicks = Math.ceil(width / 60); // One tick every 60 pixels
   const tickInterval = Math.ceil(rowSequence.length / numTicks);
@@ -343,10 +344,13 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
   });
 
   // Generate sequence characters
-  const chars = rowSequence.split("").map((char, i) => {
-    const x = i * 10;
+  let chars = null;
+
+  if (zoomLevel> -1) {chars = rowSequence.split("").map((char, i) => {
+    const x = i * sep;
     return (
-      <text key={i} x={x} y={10} textAnchor="middle" fontSize="12"
+      <text key={i} x={x} y={10} textAnchor="middle" fontSize={
+        zoomLevel< -0.5?"10":"12"}
      
       onMouseEnter={
         () => setHoveredInfo({
@@ -361,13 +365,14 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
       </text>
     );
   });
+}
 
   const featureBlocksSVG = featureBlocks.map((feature, i) => {
-    const x = feature.start * 10;
-    const width = (feature.end - feature.start) * 10;
+    const x = feature.start * sep;
+    const width = (feature.end - feature.start) * sep;
     const y = 7 + i * 20;
-    const extraFeat=5;
-    const codonPad =15;
+    const extraFeat=5*zoomFactor;
+    const codonPad =15*zoomFactor;
     
     return (
       <g key={i}>
@@ -381,7 +386,8 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
         {
           feature.codonMap.map((codon, j) => {
             return (<>
-              <text key={j} x={codon.start*10} y={y+9} textAnchor="middle" fontSize="10"
+              {
+                zoomLevel> -2 && <text key={j} x={codon.start*sep} y={y+9} textAnchor="middle" fontSize="10"
               onMouseOver={
                 () => setHoveredInfo({
                   label: `${codon.gene}: ${codon.aminoAcid}${codon.codonIndex+1}`
@@ -393,9 +399,9 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
 
               >
                 {codon.aminoAcid}
-              </text>
-              {codon.start >2 &&
-              <text key={"bb"+j} x={codon.start*10} y={y-1} textAnchor="middle" fontSize="7" fillOpacity={0.4}>
+              </text>}
+              {codon.start >2 && zoomLevel> -0.5 &&
+              <text key={"bb"+j} x={codon.start*sep} y={y-1} textAnchor="middle" fontSize="7" fillOpacity={0.4}>
                 {codon.codonIndex+1}
               </text>
         }
@@ -407,16 +413,16 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
           )
 
         }
-        {
+        { zoomLevel>-2 &&
           feature.codonMap.map((codon, j) => {
             // create a line either side of the codon
 
             return (
               <g key={j}>
                 {codon.start>1 && codon.start<3 &&
-                <line x1={codon.start*10-codonPad} y1={y} x2={codon.start*10-codonPad} y2={y+10} stroke="black" strokeOpacity={0.1} />
+                <line x1={codon.start*sep-codonPad} y1={y} x2={codon.start*sep-codonPad} y2={y+10} stroke="black" strokeOpacity={0.1} />
           }
-                <line x1={codon.start*10+codonPad} y1={y} x2={codon.start*10+codonPad} y2={y+10} stroke="black" strokeOpacity={0.1} />
+                <line x1={codon.start*sep+codonPad} y1={y} x2={codon.start*sep+codonPad} y2={y+10} stroke="black" strokeOpacity={0.1} />
               </g>
             );
 
@@ -433,11 +439,11 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
   if (searchInput != null && searchInput >= rowStart && searchInput <= rowEnd) {
    searchTick = (
     <g key={-1}>
-      <line x1={(searchInput-rowStart)*10} y1={0} x2={(searchInput-rowStart)*10} y2={10} stroke="red" />
+      <line x1={(searchInput-rowStart)*sep} y1={0} x2={(searchInput-rowStart)*sep} y2={10} stroke="red" />
       {//rect behind tick
   }
-      <rect x={(searchInput-rowStart)*10-30} y={0} width={60} height={30} fill="#ffffee"  />
-      <text x={(searchInput-rowStart)*10} y={20} textAnchor="middle" fontSize="10"
+      <rect x={(searchInput-rowStart)*sep-30} y={0} width={60} height={30} fill="#ffffee"  />
+      <text x={(searchInput-rowStart)*sep} y={20} textAnchor="middle" fontSize="10"
       fill="red"
       >
         {searchInput+1}
@@ -529,9 +535,9 @@ const ConfigPanel = ({zoomLevel,setZoomLevel}) => {
     <Slider
       value={zoomLevel}
       onChange={(x) => setZoomLevel(x)}
-      min={-5}
+      min={-4}
       max={0}
-      step={0.1}
+      step={0.01}
       style={{ width: 100 }}
       className="inline-block mx-5"
     />
@@ -634,7 +640,7 @@ function App() {
   }, []);
 
   
-  let  rowWidth= Math.floor(width*.0965);
+  let  rowWidth= Math.floor(width*.0965/(2**zoomLevel));
   // rowWidth minimum 50
   if (rowWidth < 40) {
     rowWidth = 40;
@@ -734,7 +740,7 @@ function App() {
         </div>
       )}
 
-      <div className="fixed bottom-0 right-0 z-10 w-96 bg-white">
+      <div className="fixed bottom-0 right-0 z-10 w-64 h-12 p-2 rounded shadow bg-white">
         <ConfigPanel 
         zoomLevel={zoomLevel}
         setZoomLevel={setZoomLevel}
