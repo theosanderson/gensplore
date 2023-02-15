@@ -7790,6 +7790,11 @@ react-scripts@5.0.1:
   optionalDependencies:
     fsevents "^2.3.2"
 
+react-spinners@^0.13.8:
+  version "0.13.8"
+  resolved "https://registry.yarnpkg.com/react-spinners/-/react-spinners-0.13.8.tgz#5262571be0f745d86bbd49a1e6b49f9f9cb19acc"
+  integrity sha512-3e+k56lUkPj0vb5NDXPVFAOkPC//XyhKPJjvcGjyMNPWsBKpplfeyialP74G7H7+It7KzhtET+MvGqbKgAqpZA==
+
 react-tooltip@^5.7.5:
   version "5.7.5"
   resolved "https://registry.yarnpkg.com/react-tooltip/-/react-tooltip-5.7.5.tgz#f3487e000a24b6ff84c8181064809a57b43c2e99"

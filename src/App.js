@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useLayoutEffect, useCallba
 import 'rc-slider/assets/index.css';
 import './App.css';
 
+import ClipLoader from "react-spinners/ClipLoader";
 import { genbankToJson } from "bio-parsers";
 import { useMeasure } from 'react-use'; // or just 'react-use-measure'
 import {FaSearch,FaTimes, FaZoo} from 'react-icons/fa';
@@ -928,7 +929,7 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
     return (
       <div className="w-full h-full p-5">
         <div ref={ref} className="w-full h-full" />
-        Loading...
+       
       </div>
     );
 
@@ -1053,7 +1054,9 @@ const App = () => {
   
   // option to either load from URL or upload a file
   const [genbankString, setGenbankString] = useState(null);
+  const [loading, setLoading] = useState(false);
   const loadFromUrl = async (url) => {
+    setLoading(true);
     const response = await fetch(url);
     const text = await response.text();
     setGenbankString(text);
@@ -1093,7 +1096,13 @@ const App = () => {
     searchInput={searchInput}
     setSearchInput={setSearchInput}
     />}
-    {!ready && (
+    {!ready && loading && (
+     <div className="w-full h-full text-gray-700 flex flex-col justify-center items-center">
+      <ClipLoader color={"#ccc"} loading={loading} size={150} className="mt-20" />
+    </div>
+      )}
+
+    {!ready && !loading && (
 
 <div className="w-full h-full text-gray-700 flex flex-col justify-center items-center"
 // handle dragover
