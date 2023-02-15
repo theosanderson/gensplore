@@ -13,9 +13,31 @@ import {AiOutlineZoomIn,AiOutlineZoomOut} from 'react-icons/ai';
 import {GiDna1} from 'react-icons/gi';
 import ColorHash from 'color-hash';
 import { useNavigate, useLocation } from "react-router-dom"
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import qs from "qs"
+import { U } from "ve-sequence-utils/lib/DNAComplementMap";
 var colorHash = new ColorHash({lightness: [0.75, 0.9, 0.7,0.8]});
+
+
+const filterFeatures = (features, search) => {
+  return features.filter((feature) => {
+    // if feature name contains search string
+    if(feature.name.toLowerCase().includes(search.toLowerCase())){
+      return true;
+    }
+    const product = feature.notes && feature.notes.product ? feature.notes.product[0] : "";
+    if(product.toLowerCase().includes(search.toLowerCase())){
+      return true;
+    }
+    const locus_tag = feature.notes && feature.notes.locus_tag ? feature.notes.locus_tag[0] : "";
+    if(locus_tag.toLowerCase().includes(search.toLowerCase())){
+      return true;
+    }
+    return false;
+  });
+}
 
 const useQueryState = query => {
   const location = useLocation()
@@ -247,7 +269,7 @@ const getReverseComplement = (sequence) => {
   return sequence.split("").map((base) => baseToComplement[base]).reverse().join("");
 }
 
-const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, searchInput , zoomLevel, whereMouseWentDown, setWhereMouseWentDown,
+const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, intSearchInput,annotSearchInput , zoomLevel, whereMouseWentDown, setWhereMouseWentDown,
 whereMouseWentUp, setWhereMouseWentUp,
 whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
 
@@ -257,7 +279,9 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
   const sep = 10 * zoomFactor;
 
 
-  const isSelected = searchInput>=rowStart && searchInput<=rowEnd;
+
+
+  
  
 
 
@@ -276,6 +300,11 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
       (feature.start <= rowStart && feature.end >= rowEnd))
     )
   );
+
+  const searchFeatures = !annotSearchInput ? [] : filterFeatures(relevantFeatures,annotSearchInput)
+
+  const isSelected = (intSearchInput>=rowStart && intSearchInput<=rowEnd) || searchFeatures.length>0;
+
   if (rowStart==0){
     //console.log(relevantFeatures);
   }
@@ -521,17 +550,17 @@ const codonZoomThreshold = -2
 
   // create a tick specifically at searchInput
   let searchTick = null;
-  if (searchInput != null && searchInput >= rowStart && searchInput <= rowEnd) {
+  if (intSearchInput != null && intSearchInput >= rowStart && intSearchInput <= rowEnd) {
    searchTick = (
     <g key={-1}>
-      <line x1={(searchInput-rowStart)*sep} y1={0} x2={(searchInput-rowStart)*sep} y2={10} stroke="red" />
+      <line x1={(intSearchInput-rowStart)*sep} y1={0} x2={(intSearchInput-rowStart)*sep} y2={10} stroke="red" />
       {//rect behind tick
   }
-      <rect x={(searchInput-rowStart)*sep-30} y={0} width={60} height={30} fill="#ffffee"  />
-      <text x={(searchInput-rowStart)*sep} y={20} textAnchor="middle" fontSize="10"
+      <rect x={(intSearchInput-rowStart)*sep-30} y={0} width={60} height={30} fill="#ffffee"  />
+      <text x={(intSearchInput-rowStart)*sep} y={20} textAnchor="middle" fontSize="10"
       fill="red"
       >
-        {searchInput+1}
+        {intSearchInput+1}
       </text>
     </g>
   );
@@ -634,23 +663,49 @@ const codonZoomThreshold = -2
   );
 };
 
-function SearchPanel({ searchPanelOpen,setSearchPanelOpen,searchInput,setSearchInput }) {
+function SearchPanel({ searchPanelOpen,setSearchPanelOpen,searchInput,setSearchInput,searchType, setSearchType }) {
    
 
   const handleInputChange = (event) => {
     setSearchInput(event.target.value);
+    // if event.target.value has non-numeric characters, then set searchType to annot
+    if (event.target.value.match(/[^0-9]/)) {
+      setSearchType("annot");
+      console.log("setting searchType to annot");
+    }
   
   };
+  
+  const searchOption = [
+    { value: "nuc", label: "nucleotide" },
+    { value: "annot", label: "annotation" },
+  ];
 
   return (
     <div className="bg-white p-1 text-sm shadow rounded flex items-center">
       {searchPanelOpen ? ((<>
+      <select
+       
+        value={searchType}
+        onChange={(option) => setSearchType(option.value)}
+        className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-2 rounded inline-flex items-center"
+      >
+        {searchOption.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+
+
+
       <DebounceInput
       minLength={2}
         debounceTimeout={300}
         type="text"
         value={searchInput}
         onChange={handleInputChange}
+        className="mx-2 bg-white focus:outline-none focus:shadow-outline border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal"
         placeholder="nuc index"
         id="search-input"
         // don't autocomplete
@@ -710,7 +765,8 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
    const [zoomLevel, setRawZoomLevel] = useState(0);
    const [whereMouseWentDown, setWhereMouseWentDown] = useState(null);
    const [whereMouseWentUp, setWhereMouseWentUp] = useState(null);
-   const [whereMouseCurrentlyIs, setWhereMouseCurrentlyIs] = useState(null);   
+   const [whereMouseCurrentlyIs, setWhereMouseCurrentlyIs] = useState(null);  
+   const [searchType, setSearchType] = useState("nuc");
 
   const [ref, { width }] = useMeasure();
   
@@ -719,7 +775,8 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
 
 
   // safely convert searchInput to int
-  const intSearchInput = parseInt(searchInput);
+  const intSearchInput = searchType === "nuc" ? parseInt(searchInput) : null;
+  const annotSearchInput = searchType === "annot" ? searchInput : null;
 
   const [whereOnPage, setWhereOnPage] = useState(0);
 
@@ -907,7 +964,7 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
 
   const [lastSearch, setLastSearch] = useState(null);
 
-
+ 
 
   useEffect(() => {
     if(!intSearchInput) return;
@@ -929,6 +986,24 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
     
 
   }, [intSearchInput, rowWidth]);
+  useEffect(() => {
+    if(!annotSearchInput) return;
+    const strippedAnnotInput = annotSearchInput.replace(/\s/g, "");
+    if (strippedAnnotInput === "") return;
+    // search the features for one that matches
+    const matchingFeatures = filterFeatures(genbankData.parsedSequence.features, strippedAnnotInput);
+    if(matchingFeatures.length === 0){
+      toast.error("No matching features found");
+      return;
+    }
+    const firstMatchingFeature = matchingFeatures[0];
+    const row = Math.floor(firstMatchingFeature.start / rowWidth);
+    rowVirtualizer.scrollToIndex(row+1, {align:"center"});
+    setLastSearch(annotSearchInput);
+  }, [annotSearchInput]);
+
+
+
 
 
   //console.log("virtualItems", virtualItems);
@@ -953,6 +1028,7 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
 
   return (
     <div className="w-full p-5">
+       <ToastContainer />
       {true && (
         <div className="fixed top-0 right-0 z-10">
           <SearchPanel
@@ -960,6 +1036,8 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
           setSearchInput = {setSearchInput}
           searchPanelOpen={searchPanelOpen}
           setSearchPanelOpen={setSearchPanelOpen}
+          searchType={searchType}
+          setSearchType={setSearchType}
           
           />
         </div>
@@ -1036,7 +1114,8 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
             rowWidth={rowWidth}
             setHoveredInfo={setHoveredInfo}
             rowId={virtualitem.index}
-            searchInput={intSearchInput-1}
+            intSearchInput={intSearchInput-1}
+            annotSearchInput={annotSearchInput}
             
             renderProperly={true}
             zoomLevel={zoomLevel}
