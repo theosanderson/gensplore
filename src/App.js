@@ -691,7 +691,7 @@ const ConfigPanel = ({zoomLevel,setZoomLevel}) => {
 
 
 
-function GensploreView({genbankString}) {
+function GensploreView({genbankString, searchInput, setSearchInput}) {
  
    const [searchPanelOpen, setSearchPanelOpen] = useState(false);
    const [zoomLevel, setRawZoomLevel] = useState(0);
@@ -703,7 +703,7 @@ function GensploreView({genbankString}) {
   
   const [hoveredInfo, setHoveredInfo] = useState(null);
   const [genbankData, setGenbankData] = useState(null);
-  const [searchInput, setSearchInput] = useState(null);
+
 
   // safely convert searchInput to int
   const intSearchInput = parseInt(searchInput);
@@ -888,15 +888,30 @@ function GensploreView({genbankString}) {
   }, [centeredNucleotide,zoomLevel]);
 
 
+  const [lastSearch, setLastSearch] = useState(null);
+
+
+
   useEffect(() => {
     if(!intSearchInput) return;
     const row = Math.floor(intSearchInput / rowWidth);
-    rowVirtualizer.scrollToIndex(row, {align:"center",
-    smoothScroll:true});
+    if(intSearchInput === lastSearch){
+      return
+    }
+    // checkrow is valid
+    if(row > rowData.length){
+      return
+
+    }
+
+      rowVirtualizer.scrollToIndex(row+1, {align:"center"});
+    
+    setLastSearch(intSearchInput);
+
   
     
 
-  }, [intSearchInput]);
+  }, [intSearchInput, rowWidth]);
 
 
   //console.log("virtualItems", virtualItems);
@@ -1057,6 +1072,7 @@ const App = () => {
 
   const [gbUrl, setGbUrl] = useQueryState("gb")
   const [loaded, setLoaded] = useQueryState("loaded")
+  const [searchInput, setSearchInput] = useQueryState("search")
 
   useEffect(() => {
     if (gbUrl) {
@@ -1073,7 +1089,10 @@ const App = () => {
 
   // create UI for loading from URL or file
   return (<>
-    {ready &&<GensploreView genbankString={genbankString} />}
+    {ready &&<GensploreView genbankString={genbankString} 
+    searchInput={searchInput}
+    setSearchInput={setSearchInput}
+    />}
     {!ready && (
 
 <div className="w-full h-full text-gray-700 flex flex-col justify-center items-center"
