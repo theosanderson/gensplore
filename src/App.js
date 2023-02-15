@@ -462,7 +462,7 @@ const codonZoomThreshold = -2
         />
         <text x={x-10} y={y} textAnchor="left" fontSize="10"
         >
-          {betterName}
+          {altName} ({betterName})
         </text>
         {
           feature.codonMap.map((codon, j) => {
@@ -1083,7 +1083,7 @@ const App = () => {
       window.alert("Error loading file: for large Genbank files, try using the 'Load from file' option instead.");
       return;
     }
-    
+
     const text = await response.text();
     setGenbankString(text);
     setLoading(false);
