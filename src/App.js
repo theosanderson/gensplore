@@ -1070,6 +1070,9 @@ const App = () => {
   const addlExamples = [
     ["Monkeypox clade II","NC_063383.1"],
     ["HIV-1","NC_001802.1"],
+    ["M. tuberculosis","https://cov2tree.nyc3.cdn.digitaloceanspaces.com/gensplore/mtb.gb"],
+    ["E. coli K12","https://cov2tree.nyc3.cdn.digitaloceanspaces.com/gensplore/k12.gb"]
+  
    
    
   ]
@@ -1102,7 +1105,7 @@ const App = () => {
 
   };
 
-  const [url, setUrl] = useState("");
+
 
   const [gbUrl, setGbUrl] = useQueryState("gb")
   const [loaded, setLoaded] = useQueryState("loaded")
@@ -1218,6 +1221,12 @@ onDrop={(e) => {
         Load
       </button>
      </div>
+     <div>
+      {genbankId && genbankId.length > 1 && (
+        <p className="text-gray-500 text-xs mt-2">
+          This will only work for virus-sized genomes, for bacterial genomes please upload a file above.
+          </p>)}
+     </div>
 
       
 </div>
@@ -1247,7 +1256,10 @@ onDrop={(e) => {
           <li>
             <button
               className="text-blue-400 hover:text-blue-700 mb-3"
-              onClick={() => loadFromGenbankId(example[1])}
+              onClick={
+                
+                example[1].startsWith("http") ? () => setGbUrl(example[1]) :
+                () => loadFromGenbankId(example[1])}
             >
               {example[0]}
             </button>
