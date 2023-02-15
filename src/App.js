@@ -310,32 +310,80 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
   }
 
   const featureBlocks = relevantFeatures.map((feature, i) => {
-    let startIsActual = true;
-    let startPos;
-    let endPos
+   
+    let startPos2;
+    let endPos2;
+    
     if (feature.start < rowStart )
+    {
+      startPos2 = 0;
+     
+    }
+    else
+    {
+      startPos2 = feature.start - rowStart;
+    }
+
+    if (feature.end > rowEnd)
+    {
+      endPos2 = rowEnd - rowStart;
+      
+    }
+    else
+    {
+      endPos2 = feature.end - rowStart;
+    }
+
+
+    const locations = feature.locations ? feature.locations : [{
+      start: feature.start,
+      end: feature.end,
+    }];
+
+    const blocks = locations.filter(
+      (location) => (
+        (location.start >= rowStart && location.start <= rowEnd) ||
+        (location.end >= rowStart && location.end <= rowEnd) ||
+        (location.start <= rowStart && location.end >= rowEnd)
+      )
+
+    ).map((location, j) => {
+      let startPos;
+      let endPos;
+      let startIsActual = true;
+      
+
+
+    if (location.start < rowStart )
     {
       startPos = 0;
       startIsActual = false;
     }
     else
     {
-      startPos = feature.start - rowStart;
+      startPos = location.start - rowStart;
     }
     let endIsActual = true;
-    if (feature.end > rowEnd)
+    if (location.end > rowEnd)
     {
       endPos = rowEnd - rowStart;
       endIsActual = false;
     }
     else
     {
-      endPos = feature.end - rowStart;
+      endPos = location.end - rowStart;
     }
-    const locations = feature.locations ? feature.locations : [{
-      start: feature.start,
-      end: feature.end,
-    }];
+  return {
+      start: startPos,
+      end: endPos,
+      startIsActual: startIsActual,
+      endIsActual: endIsActual,
+
+  }
+  });
+
+
+    
     
     // positions in the translation
     // for each location in this row: check if it is in any of the locations, if so, figure out which codon it is in
@@ -389,10 +437,10 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
     
 
     return ({
-      start: startPos,
-      end: endPos,
-      startIsActual: startIsActual,
-      endIsActual: endIsActual,
+      start: startPos2,
+      end: endPos2,
+    
+      blocks: blocks,
       name: feature.name,
       type: feature.type,
       notes: feature.notes,
@@ -424,6 +472,8 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
       <g key={i}>
         <line x1={x} y1={0} x2={x} y2={10} stroke="black" />
         <text x={x} y={20} textAnchor="middle" fontSize="10"
+        // bold
+     
         >
           {label+1}
         </text>
@@ -438,7 +488,7 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
     const x = i * sep;
     return (
       <text key={i} x={x} y={10} textAnchor="middle" fontSize={
-        zoomLevel< -0.5?"10":"12"}
+        zoomLevel< -0.5?"10":"12"} fillOpacity={0.9}
      
       onMouseEnter={
         () => setHoveredInfo({
@@ -458,7 +508,11 @@ const codonZoomThreshold = -2
 
   const featureBlocksSVG = featureBlocks.map((feature, i) => {
     const x = feature.start * sep;
+    console.log(x, "x");
+
+
     const width = (feature.end - feature.start) * sep;
+    console.log(width, "width");
     const y = 7 + i * 20;
     const extraFeat=5*zoomFactor;
     const codonPad =15*zoomFactor;
@@ -474,7 +528,10 @@ const codonZoomThreshold = -2
     
     return (
       <g key={i}>
-        <rect x={x-extraFeat} y={y} width={width+extraFeat*2} height={10} fill={
+        <line x1={x} y1={y+5} x2={x+width} y2={y+5} stroke={getColor(feature,product)} />
+        {feature.blocks.map((block, j) => (
+
+        <rect x={block.start * sep -extraFeat} y={y} width={(block.end-block.start)*sep + extraFeat*2 } height={10} fill={
           getColor(feature, product)
         } 
         onMouseEnter={
@@ -490,6 +547,9 @@ const codonZoomThreshold = -2
 
         
         />
+        ))}
+
+
         <text x={x-10} y={y} textAnchor="left" fontSize="10"
         >
           {betterName}
@@ -515,7 +575,9 @@ const codonZoomThreshold = -2
                 {codon.aminoAcid}
               </text>}
               {codon.start >2 && zoomLevel> -0.5 &&
-              <text key={"bb"+j} x={codon.start*sep} y={y-1} textAnchor="middle" fontSize="7" fillOpacity={0.4}>
+              <text key={"bb"+j} x={codon.start*sep} y={y-1} textAnchor="middle" fontSize="7" fillOpacity={0.4}
+              //fontWeight="bold"
+              >
                 {codon.codonIndex+1}
               </text>
         }
