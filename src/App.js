@@ -535,10 +535,10 @@ const ConfigPanel = ({zoomLevel,setZoomLevel}) => {
     <Slider
       value={zoomLevel}
       onChange={(x) => setZoomLevel(x)}
-      min={-4}
+      min={-6.5}
       max={0}
       step={0.01}
-      style={{ width: 100 }}
+      style={{ width: 150 }}
       className="inline-block mx-5"
     />
     <AiOutlineZoomIn className="inline-block" />
