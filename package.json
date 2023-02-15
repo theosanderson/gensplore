@@ -9,6 +9,7 @@
     "@testing-library/user-event": "^13.5.0",
     "autoprefixer": "^10.4.13",
     "bio-parsers": "^9.3.0",
+    "color-hash": "^2.0.2",
     "postcss": "^8.4.21",
     "qs": "^6.11.0",
     "rc-slider": "^10.1.1",

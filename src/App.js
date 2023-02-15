@@ -11,10 +11,11 @@ import { useVirtualizer, useWindowVirtualizer} from '@tanstack/react-virtual';
 import Slider, {Range} from "rc-slider";
 import {AiOutlineZoomIn,AiOutlineZoomOut} from 'react-icons/ai';
 import {GiDna1} from 'react-icons/gi';
-
+import ColorHash from 'color-hash';
 import { useNavigate, useLocation } from "react-router-dom"
 
 import qs from "qs"
+var colorHash = new ColorHash({lightness: [0.75, 0.9, 0.7,0.8]});
 
 const useQueryState = query => {
   const location = useLocation()
@@ -78,12 +79,14 @@ const Tooltip = ({ hoveredInfo }) => {
       {hoveredInfo && <span>{hoveredInfo.label}</span>}
       {hoveredInfo && hoveredInfo.product && (
         <div className="text-xs">{hoveredInfo.product}</div>
+        
       )}
+      
     </div>
   );
 };
 
-const getColor = (feature) => {
+const getColor = (feature, product) => {
   switch (feature.type) {
     case "CDS":
       switch (feature.name){
@@ -131,7 +134,7 @@ const getColor = (feature) => {
           return "#ff7f50";
         
         default:
-          return "#c39797";
+          return colorHash.hex(feature.name+ product+feature.type);
       }
     case "gene":
       return "blue";
@@ -142,7 +145,7 @@ const getColor = (feature) => {
     case "3'UTR":
       return "orange";
     default:
-      return "black";
+      return colorHash.hex(feature.name+ product+feature.type);
   }
 };
 
@@ -312,7 +315,7 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
     const seqLength = locations.reduce((acc, location) => acc + location.end - location.start + 1, 0);
 
     const codonMap = [];
-    if (feature.type=="CDS" ){
+    if (feature.type=="CDS" | feature.type=="mat_peptide"){
 
     for (let j = rowStart; j < rowEnd; j++) {
       let positionSoFar = 0;
@@ -431,18 +434,25 @@ const codonZoomThreshold = -2
     const extraFeat=5*zoomFactor;
     const codonPad =15*zoomFactor;
 
+    const product = feature.notes ? feature.notes.product : "";
+    let betterName = product ? product : feature.name;
+    const altName = betterName == feature.name ? "" : feature.name;
+    if (betterName=="Untitled Feature") betterName=feature.type;
+
+
    
     
     return (
       <g key={i}>
         <rect x={x-extraFeat} y={y} width={width+extraFeat*2} height={10} fill={
-          getColor(feature)
+          getColor(feature, product)
         } 
         onMouseEnter={
           () => {
             if (zoomLevel< codonZoomThreshold)  setHoveredInfo({
             label: `${feature.name}: ${feature.type}`,
-            product: feature.notes && feature.notes.product ? feature.notes.product : null,
+            product: altName,
+            locusTag: feature.notes && feature.notes.locus_tag ? feature.notes.locus_tag : null,
           })}
         }
         onMouseLeave={() => {
@@ -452,7 +462,7 @@ const codonZoomThreshold = -2
         />
         <text x={x-10} y={y} textAnchor="left" fontSize="10"
         >
-          {feature.name == "Untitled Feature" ? feature.type : feature.name}
+          {betterName}
         </text>
         {
           feature.codonMap.map((codon, j) => {
@@ -461,8 +471,9 @@ const codonZoomThreshold = -2
                 zoomLevel> codonZoomThreshold && <text key={j} x={codon.start*sep} y={y+9} textAnchor="middle" fontSize="10"
               onMouseOver={
                 () => setHoveredInfo({
-                  label: `${codon.gene}: ${codon.aminoAcid}${codon.codonIndex+1}`,
-                  product: feature.notes && feature.notes.product ? feature.notes.product : null,
+                  label: `${betterName}: ${codon.aminoAcid}${codon.codonIndex+1}`,
+                  product: altName,
+                  locusTag: feature.notes && feature.notes.locus_tag ? feature.notes.locus_tag : null,
 
                 })
               }
@@ -868,6 +879,7 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
 
   const virtualItems = rowVirtualizer.getVirtualItems();
   const [centeredNucleotide, setCenteredNucleotide] = useState(null);
+  
 
   const setZoomLevel = (x) => {
     const middleRow = virtualItems[Math.floor(virtualItems.length / 2)].index
@@ -1051,13 +1063,27 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
 
 
 const App = () => {
+  const addlExamples = [
+    ["Monkeypox clade II","NC_063383.1"],
+    ["HIV-1","NC_001802.1"],
+   
+   
+  ]
   
   // option to either load from URL or upload a file
   const [genbankString, setGenbankString] = useState(null);
   const [loading, setLoading] = useState(false);
   const loadFromUrl = async (url) => {
+    setGenbankString(null);
     setLoading(true);
     const response = await fetch(url);
+    // check for errors
+    if (!response.ok) {
+      setLoading(false);
+      window.alert("Error loading file: for large Genbank files, try using the 'Load from file' option instead.");
+      return;
+    }
+    
     const text = await response.text();
     setGenbankString(text);
     setLoading(false);
@@ -1089,7 +1115,17 @@ const App = () => {
   const [beingDraggedOver, setBeingDraggedOver] = useState(false);
   const [genbankId, setGenbankId] = useState(null);
 
+  const loadFromGenbankId = async (id) => {
+
+    const strippedOfWhitespace = id.replace(/\s/g, '')
+    // if no length, do nothing
+    if (strippedOfWhitespace.length<= 3) {
+      return
+    }
   
+    const url = `https://genbank-api.vercel.app/api/genbank/${strippedOfWhitespace}` 
+    setGbUrl(url)
+  }
 
 
   // create UI for loading from URL or file
@@ -1124,6 +1160,9 @@ onDrop={(e) => {
   setBeingDraggedOver(false);
   loadFromFile(e.dataTransfer.files[0]);
 }}
+
+
+
 
 
 >
@@ -1168,14 +1207,7 @@ onDrop={(e) => {
       <button
         className="bg-gray-100 ml-3 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow"
         onClick={() =>{
-          const strippedOfWhitespace = genbankId.replace(/\s/g, '')
-          // if no length, do nothing
-          if (strippedOfWhitespace.length<= 3) {
-            return
-          }
-
-          const url = `https://genbank-api.vercel.app/api/genbank/${strippedOfWhitespace}` 
-          setGbUrl(url)
+          loadFromGenbankId(genbankId)
         }
         }
       >
@@ -1193,7 +1225,7 @@ onDrop={(e) => {
       <ul>
         <li>
           <button
-            className="text-blue-500 hover:text-blue-800 mb-3 mt-3"
+            className="text-blue-400 hover:text-blue-700 mb-3 mt-3"
             onClick={() => setGbUrl("/sequence.gb")}
           >
             SARS-CoV-2 reference genome
@@ -1201,21 +1233,30 @@ onDrop={(e) => {
         </li>
         <li>
           <button
-            className="text-blue-500 hover:text-blue-800 mb-3"
+            className="text-blue-400 hover:text-blue-700 mb-3"
             onClick={() => setGbUrl("/sequence2.gb")}
           >
             <i>P. falciparum</i> chromosome 14
           </button>
         </li>
+        {addlExamples.map((example) => (
+          <li>
+            <button
+              className="text-blue-400 hover:text-blue-700 mb-3"
+              onClick={() => loadFromGenbankId(example[1])}
+            >
+              {example[0]}
+            </button>
+          </li>
+        ))}
       </ul>
+    </div>
+  </div>
 </div>
-
-</div>
-</div>
-
     )}
   </>);
 };
+
 
 
 
