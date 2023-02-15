@@ -601,7 +601,7 @@ function SearchPanel({ searchPanelOpen,setSearchPanelOpen,searchInput,setSearchI
   };
 
   return (
-    <div className="bg-gray-100 p-1 text-sm">
+    <div className="bg-white p-1 text-sm shadow rounded flex items-center">
       {searchPanelOpen ? ((<>
       <DebounceInput
       minLength={2}
@@ -623,7 +623,7 @@ function SearchPanel({ searchPanelOpen,setSearchPanelOpen,searchInput,setSearchI
       </button></>
       )) : (
         <button
-          className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center"
+          className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center"
           onClick={() => setSearchPanelOpen(true)}
         >
          <FaSearch className="mr-2" />
