@@ -435,8 +435,9 @@ const codonZoomThreshold = -2
     const codonPad =15*zoomFactor;
 
     const product = feature.notes ? feature.notes.product : "";
-    let betterName = product ? product : feature.name;
-    const altName = betterName == feature.name ? "" : feature.name;
+    let betterName = feature.type =="mat_peptide" ? product : feature.name;
+
+    const altName =feature.type =="mat_peptide" ? feature.name : product;
     if (betterName=="Untitled Feature") betterName=feature.type;
 
 
@@ -462,7 +463,7 @@ const codonZoomThreshold = -2
         />
         <text x={x-10} y={y} textAnchor="left" fontSize="10"
         >
-          {altName} ({betterName})
+          {betterName}
         </text>
         {
           feature.codonMap.map((codon, j) => {
