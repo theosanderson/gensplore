@@ -195,6 +195,12 @@ const codonToAminoAcid = (codon) => {
   }
 };
 
+const baseToComplement = {"A":"T","T":"A","G":"C","C":"G","N":"N","-":"-"};
+
+const getReverseComplement = (sequence) => {
+  return sequence.split("").map((base) => baseToComplement[base]).reverse().join("");
+}
+
 const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, searchInput , zoomLevel}) => {
 
   const zoomFactor = 2**zoomLevel;
@@ -257,6 +263,8 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
     // for each location in this row: check if it is in any of the locations, if so, figure out which codon it is in
     // and add it to the map
 
+    const seqLength = locations.reduce((acc, location) => acc + location.end - location.start + 1, 0);
+
     const codonMap = [];
     if (feature.type=="CDS" ){
 
@@ -267,7 +275,8 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
           
           const codonStart =  (j );
           const codonEnd = codonStart + 2;
-          const codonIndex = Math.floor((j - (locations[k].start - positionSoFar)) / 3);
+          const codonIndexInitial = Math.floor((j - (locations[k].start - positionSoFar)) / 3);
+          const codonIndex = feature.strand>0 ? codonIndexInitial : seqLength/3 - codonIndexInitial -1;
           const frame = (j - (locations[k].start - positionSoFar)) % 3;
           if (frame != 1) {
             continue;
@@ -275,10 +284,10 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
 
 
           const codonSeq = fullSequence.slice(codonStart-1, codonEnd );
-          //console.log(codonSeq);
+         
 
           
-          const aminoAcid = codonToAminoAcid(codonSeq);
+          const aminoAcid = codonToAminoAcid(feature.strand>0 ? codonSeq : getReverseComplement(codonSeq));
           //const aminoAcid = forTranslation[codonIndex];
           
           codonMap.push({
