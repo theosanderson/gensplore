@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo, useLayoutEffect, useCallback } from "react";
 import 'rc-slider/assets/index.css';
 import './App.css';
 
@@ -9,6 +9,38 @@ import {DebounceInput} from 'react-debounce-input';
 import { useVirtualizer, useWindowVirtualizer} from '@tanstack/react-virtual';
 import Slider, {Range} from "rc-slider";
 import {AiOutlineZoomIn,AiOutlineZoomOut} from 'react-icons/ai';
+import {GiDna1} from 'react-icons/gi';
+
+import { useNavigate, useLocation } from "react-router-dom"
+
+import qs from "qs"
+
+const useQueryState = query => {
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  const setQuery = useCallback(
+    value => {
+      const existingQueries = qs.parse(location.search, {
+        ignoreQueryPrefix: true,
+      })
+
+      const queryString = qs.stringify(
+        { ...existingQueries, [query]: value },
+        { skipNulls: true }
+      )
+
+      navigate(`${location.pathname}?${queryString}`)
+    },
+    [navigate, location, query]
+  )
+
+  return [
+    qs.parse(location.search, { ignoreQueryPrefix: true })[query],
+    setQuery,
+  ]
+}
+
 const Tooltip = ({ hoveredInfo }) => {
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
@@ -630,7 +662,7 @@ const ConfigPanel = ({zoomLevel,setZoomLevel}) => {
 
 
 
-function App() {
+function GensploreView({genbankString}) {
  
    const [searchPanelOpen, setSearchPanelOpen] = useState(false);
    const [zoomLevel, setRawZoomLevel] = useState(0);
@@ -684,11 +716,10 @@ function App() {
 
 
   useEffect(() => {
-    const loadGenbankFile = async () => {
+    const loadGenbankString= async () => {
       try {
-        const response = await fetch("/sequence.gb");
-        const text = await response.text();
-        const genbankObject = await genbankToJson(text);
+        
+        const genbankObject = await genbankToJson(genbankString);
         console.log("GenBank file loaded:", genbankObject);
         // to uppercase
         genbankObject[0].parsedSequence.sequence = genbankObject[0].parsedSequence.sequence.toUpperCase();
@@ -697,7 +728,7 @@ function App() {
         console.error("Error loading GenBank file:", error);
       }
     };
-    loadGenbankFile();
+    loadGenbankString();
   }, []);
 
 
@@ -886,6 +917,20 @@ function App() {
       <Tooltip hoveredInfo={hoveredInfo} />
       {genbankData && (
         <div ref={ref} >
+          {
+            // small logo on left, name and definition on right
+          }
+          <div className="flex flex-row">
+            <div className="flex flex-col">
+              <h3 className="text-xl mr-3 text-gray-700 ml-4 font-bold ">
+              <a href="/"><GiDna1 className="inline" />
+              
+                Gensplore
+                </a></h3>
+              </div>
+              </div>
+            <div className="flex flex-col ml-4 mt-3 text-gray-900">
+
           <h2 className="text-2xl"
           >{genbankData.parsedSequence.name}</h2>
           <div>
@@ -894,6 +939,8 @@ function App() {
               </div>
             
 
+            
+            </div>
             </div>
          <div ref={parentRef}  className="mt-5 h-80">
          <div
@@ -956,5 +1003,125 @@ function App() {
   );
   
 }
+
+
+const App = () => {
+  
+  // option to either load from URL or upload a file
+  const [genbankString, setGenbankString] = useState(null);
+  const loadFromUrl = async (url) => {
+    const response = await fetch(url);
+    const text = await response.text();
+    setGenbankString(text);
+  };
+
+  const loadFromFile = async (file) => {
+   
+    const text = await file.text();
+  
+    setGenbankString(text);
+    setLoaded(true);
+
+  };
+
+  const [url, setUrl] = useState("");
+
+  const [gbUrl, setGbUrl] = useQueryState("gb")
+  const [loaded, setLoaded] = useQueryState("loaded")
+
+  useEffect(() => {
+    if (gbUrl) {
+      loadFromUrl(gbUrl);
+    }
+  }, [gbUrl]);
+
+  const ready = genbankString && (loaded || gbUrl);
+
+  const [beingDraggedOver, setBeingDraggedOver] = useState(false);
+
+  
+
+
+  // create UI for loading from URL or file
+  return (<>
+    {ready &&<GensploreView genbankString={genbankString} />}
+    {!ready && (
+
+<div className="w-full h-full text-gray-700 flex flex-col justify-center items-center"
+// handle dragover
+onDragOver={(e) => {
+  e.preventDefault();
+  setBeingDraggedOver(true);
+}}
+// handle dragleave
+onDragLeave={(e) => {
+  e.preventDefault();
+  setBeingDraggedOver(false);
+}}
+// handle drop
+onDrop={(e) => {
+  
+  e.preventDefault();
+  setBeingDraggedOver(false);
+  loadFromFile(e.dataTransfer.files[0]);
+}}
+
+
+>
+
+
+<h3 className="text-2xl mr-3 text-gray-700 ml-3 font-bold text-center mt-4 mb-4 ">
+                <GiDna1 className="inline" />
+                
+                Gensplore</h3>
+  <div className="flex flex-row justify-center">
+   
+   
+    <div className="flex flex-col">
+      <h2 className="text-l">Upload a GenBank file , or drag and drop</h2>
+      {beingDraggedOver && (
+        <div className="border rounded-lg py-2 px-3 mt-2 text-center text-green-500">
+          Drop file now to load
+          </div>
+          )}
+      <input
+        type="file"
+        className="border rounded-lg py-2 px-3 mt-2 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+        onChange={(e) => loadFromFile(e.target.files[0])}
+      />
+    </div>
+  </div>
+  <div className="flex flex-row justify-center mt-5 border-t border-gray-300 pt-5 text-center">
+    <div className="flex flex-col">
+      <h2 className="text-l">Or select an example:</h2>
+      <ul>
+        <li>
+          <button
+            className="text-blue-500 hover:text-blue-800 mb-3 mt-3"
+            onClick={() => setGbUrl("/sequence.gb")}
+          >
+            SARS-CoV-2 reference genome
+          </button>
+        </li>
+        <li>
+          <button
+            className="text-blue-500 hover:text-blue-800 mb-3"
+            onClick={() => setGbUrl("/sequence2.gb")}
+          >
+            <i>P. falciparum</i> chromosome 14
+          </button>
+        </li>
+      </ul>
+</div>
+</div>
+</div>
+
+    )}
+  </>);
+};
+
+
+
+    
 
 export default App;
