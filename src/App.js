@@ -545,7 +545,7 @@ const ConfigPanel = ({zoomLevel,setZoomLevel}) => {
       value={zoomLevel}
       onChange={(x) => setZoomLevel(x)}
       min={-6.5}
-      max={0}
+      max={1}
       step={0.01}
       style={{ width: 150 }}
       className="inline-block mx-5"
