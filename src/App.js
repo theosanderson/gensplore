@@ -201,16 +201,18 @@ const getReverseComplement = (sequence) => {
   return sequence.split("").map((base) => baseToComplement[base]).reverse().join("");
 }
 
-const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, searchInput , zoomLevel}) => {
+const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, searchInput , zoomLevel, whereMouseWentDown, setWhereMouseWentDown,
+whereMouseWentUp, setWhereMouseWentUp,
+whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
+
+ 
 
   const zoomFactor = 2**zoomLevel;
   const sep = 10 * zoomFactor;
 
 
   const isSelected = searchInput>=rowStart && searchInput<=rowEnd;
-  if(isSelected){
-    console.log("selected");
-  }
+ 
 
 
 
@@ -461,18 +463,81 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
   );
   }
 
+  let selectionRect = null;
+  let selTempStart = null;
+  let selTempEnd = null;
+  //console.log(whereMouseWentDown, whereMouseWentUp, whereMouseCurrentlyIs);
+
+  if(whereMouseWentDown != null ){
+    
+
+  const alternative = whereMouseWentUp != null ? whereMouseWentUp : whereMouseCurrentlyIs;
+
+  const rectStart = Math.min(whereMouseWentDown, alternative);
+  const rectEnd = Math.max(whereMouseWentDown, alternative);
+  //console.log(rectStart, rectEnd);
+  selectionRect = (
+    <rect x={extraPadding+(rectStart-rowStart-0.5)*sep} y={0} width={(rectEnd-rectStart)*sep} height={height} fill="#bbbbff" fillOpacity={0.5} />
+  );
+
+  }
+
+  
+  
+
+
 
   // Concatenate sequence characters and ticks with SVG
   return (
     <div style={{ position: "relative", height: `${height}px`,
     ...(isSelected? {backgroundColor: "#ffffee"} : {})
     
-    }} id={`row-${rowId}`}>
+    }} 
+    onMouseDown={e => {
+      // figure out which nucleotide was clicked
+      const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
+      const nucleotide = Math.floor((x - extraPadding) / sep +0.5) + rowStart;
+      setWhereMouseWentDown(nucleotide);
+      setWhereMouseWentUp(null);
+      e.preventDefault();
+
+    }
+    }
+
+    onMouseUp={e => {
+      // figure out which nucleotide was clicked
+      const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
+      const nucleotide = Math.floor((x - extraPadding) / sep -0.5) + rowStart;
+      if (Math.abs(nucleotide - whereMouseWentDown) <= 1) {
+        // if the mouse didn't move, then this is a click
+
+        setWhereMouseWentDown(null);
+        setWhereMouseWentUp(null);
+      }
+      else {
+        // otherwise, this is a drag
+        setWhereMouseWentUp(nucleotide);
+        e.preventDefault();
+      }
+    }
+    }
+
+    onMouseMove={e => {
+      // figure out which nucleotide was clicked
+      const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
+      const nucleotide = Math.floor((x - extraPadding) / sep +0.5) + rowStart;
+      setWhereMouseCurrentlyIs(nucleotide);
+    }
+    }
+
+    
+    id={`row-${rowId}`}>
       <svg
         width={width+40}
         height={height - 20}
         style={{ position: "absolute", top: 0, left: 0 }}
       >
+        {selectionRect}
         <g
         fillOpacity={0.7}
         >
@@ -569,29 +634,10 @@ function App() {
  
    const [searchPanelOpen, setSearchPanelOpen] = useState(false);
    const [zoomLevel, setRawZoomLevel] = useState(0);
-   
+   const [whereMouseWentDown, setWhereMouseWentDown] = useState(null);
+   const [whereMouseWentUp, setWhereMouseWentUp] = useState(null);
+   const [whereMouseCurrentlyIs, setWhereMouseCurrentlyIs] = useState(null);   
 
-   // detect ctrl-F and open search panel
-    useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.keyCode === 70) {
-        e.preventDefault();
-        setSearchPanelOpen(true);
-        // focus on search input
-        setTimeout(() => {
-          document.getElementById("search-input").focus();
-          // select all text
-          document.getElementById("search-input").select();
-        }
-        , 100);
-    }
-
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
   const [ref, { width }] = useMeasure();
   
   const [hoveredInfo, setHoveredInfo] = useState(null);
@@ -653,6 +699,58 @@ function App() {
     };
     loadGenbankFile();
   }, []);
+
+
+   // detect ctrl-F and open search panel
+   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.keyCode === 70) {
+        e.preventDefault();
+        setSearchPanelOpen(true);
+        // focus on search input
+        setTimeout(() => {
+          document.getElementById("search-input").focus();
+          // select all text
+          document.getElementById("search-input").select();
+        }
+        , 100);
+    }
+    
+
+
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+  
+
+
+   // detect ctrl-F and open search panel
+   useEffect(() => {
+    const handleKeyDown = (e) => {
+     
+    // ctrl-C
+    if ((e.ctrlKey || e.metaKey) && e.keyCode === 67) {
+      e.preventDefault();
+      const selStart = Math.min(whereMouseWentDown,whereMouseWentUp);
+      const selEnd = Math.max(whereMouseWentDown,whereMouseWentUp);
+      //console.log(selStart,selEnd);
+      const selectedText = genbankData.parsedSequence.sequence.substring(selStart,selEnd);
+      console.log(selectedText);
+      navigator.clipboard.writeText(selectedText);
+    }
+
+
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [genbankData, whereMouseWentDown, whereMouseWentUp]);
+  
+
 
   
   let  rowWidth= Math.floor(width*.0965/(2**zoomLevel));
@@ -831,8 +929,15 @@ function App() {
             setHoveredInfo={setHoveredInfo}
             rowId={virtualitem.index}
             searchInput={intSearchInput-1}
+            
             renderProperly={true}
             zoomLevel={zoomLevel}
+            whereMouseWentDown={whereMouseWentDown}
+            setWhereMouseWentDown={setWhereMouseWentDown}
+            whereMouseWentUp={whereMouseWentUp}
+            setWhereMouseWentUp={setWhereMouseWentUp}
+            whereMouseCurrentlyIs={whereMouseCurrentlyIs}
+            setWhereMouseCurrentlyIs={setWhereMouseCurrentlyIs}
           
             />
             </div>)
