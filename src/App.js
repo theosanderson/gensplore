@@ -528,7 +528,10 @@ const codonZoomThreshold = -2
     
     return (
       <g key={i}>
-        <line x1={x} y1={y+5} x2={x+width} y2={y+5} stroke={getColor(feature,product)} />
+        <line x1={x} y1={y+5} x2={x+width} y2={y+5} stroke={getColor(feature,product)} 
+        // width 2
+        strokeWidth={1.5}
+        />
         {feature.blocks.map((block, j) => (
 
         <rect x={block.start * sep -extraFeat} y={y} width={(block.end-block.start)*sep + extraFeat*2 } height={10} fill={
