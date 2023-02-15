@@ -1363,6 +1363,12 @@ onDrop={(e) => {
         className="border rounded-lg py-2 px-3 mt-2focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
         onChange={(e) => setGenbankId(e.target.value)}
         placeholder="NC..."
+        onKeyUp={(e) => {
+          if (e.key === "Enter") {
+            loadFromGenbankId(genbankId)
+          }
+        }
+        }
       />
       <button
         className="bg-gray-100 ml-3 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow"
