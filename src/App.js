@@ -1022,7 +1022,7 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
     // if there is a selection, use that instead
     if (whereMouseWentDown && whereMouseWentUp) {
       const midPoint = Math.floor((whereMouseWentDown + whereMouseWentUp) / 2);
-      rowVirtualizer.scrollToIndex(5+Math.floor(midPoint / rowWidth), {align:"center",
+      rowVirtualizer.scrollToIndex(3+Math.floor(midPoint / rowWidth), {align:"center",
       smoothScroll:false});
       setCenteredNucleotide(null);
       return;
