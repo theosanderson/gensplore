@@ -75,6 +75,9 @@ const Tooltip = ({ hoveredInfo }) => {
   return (
     <div style={tooltipStyles} className="text-sm bg-gray-100 p-2 rounded">
       {hoveredInfo && <span>{hoveredInfo.label}</span>}
+      {hoveredInfo && hoveredInfo.product && (
+        <div className="text-xs">{hoveredInfo.product}</div>
+      )}
     </div>
   );
 };
@@ -193,7 +196,7 @@ const codonToAminoAcid = (codon) => {
     case "TAA":
     case "TAG":
     case "TGA":
-      return "STOP";
+      return "*";
     case "CAT":
     case "CAC":
       return "H";
@@ -262,6 +265,7 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
     (feature) => (
       feature.type !== "source" && 
       feature.type !== "gene" &&
+      feature.type !== "mRNA" &&
       (
       (feature.start >= rowStart && feature.start <= rowEnd) ||
       (feature.end >= rowStart && feature.end <= rowEnd) ||
@@ -358,6 +362,7 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
       endIsActual: endIsActual,
       name: feature.name,
       type: feature.type,
+      notes: feature.notes,
       strand: feature.strand,
       locations: locations,
       codonMap: codonMap,
@@ -416,6 +421,7 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
     );
   });
 }
+const codonZoomThreshold = -2
 
   const featureBlocksSVG = featureBlocks.map((feature, i) => {
     const x = feature.start * sep;
@@ -423,12 +429,26 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
     const y = 7 + i * 20;
     const extraFeat=5*zoomFactor;
     const codonPad =15*zoomFactor;
+
+   
     
     return (
       <g key={i}>
         <rect x={x-extraFeat} y={y} width={width+extraFeat*2} height={10} fill={
           getColor(feature)
-        } />
+        } 
+        onMouseEnter={
+          () => {
+            if (zoomLevel< codonZoomThreshold)  setHoveredInfo({
+            label: `${feature.name}: ${feature.type}`,
+            product: feature.notes && feature.notes.product ? feature.notes.product : null,
+          })}
+        }
+        onMouseLeave={() => {
+         if (zoomLevel < codonZoomThreshold) setHoveredInfo(null)}}
+
+        
+        />
         <text x={x-10} y={y} textAnchor="left" fontSize="10"
         >
           {feature.name == "Untitled Feature" ? feature.type : feature.name}
@@ -437,10 +457,12 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
           feature.codonMap.map((codon, j) => {
             return (<>
               {
-                zoomLevel> -2 && <text key={j} x={codon.start*sep} y={y+9} textAnchor="middle" fontSize="10"
+                zoomLevel> codonZoomThreshold && <text key={j} x={codon.start*sep} y={y+9} textAnchor="middle" fontSize="10"
               onMouseOver={
                 () => setHoveredInfo({
-                  label: `${codon.gene}: ${codon.aminoAcid}${codon.codonIndex+1}`
+                  label: `${codon.gene}: ${codon.aminoAcid}${codon.codonIndex+1}`,
+                  product: feature.notes && feature.notes.product ? feature.notes.product : null,
+
                 })
               }
               onMouseLeave={() => setHoveredInfo(null)}
