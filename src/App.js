@@ -936,6 +936,7 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
       if (selectedText){
       console.log(selectedText);
       navigator.clipboard.writeText(selectedText);
+      toast.success("Copied to clipboard");
       e.preventDefault();
       }
     }
