@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from "react";
-
+import 'rc-slider/assets/index.css';
 import './App.css';
 
 import { genbankToJson } from "bio-parsers";
 import { useMeasure } from 'react-use'; // or just 'react-use-measure'
-import {FaSearch,FaTimes} from 'react-icons/fa';
+import {FaSearch,FaTimes, FaZoo} from 'react-icons/fa';
 import {DebounceInput} from 'react-debounce-input';
 import { useVirtualizer, useWindowVirtualizer} from '@tanstack/react-virtual';
+import Slider, {Range} from "rc-slider";
+import {AiOutlineZoomIn,AiOutlineZoomOut} from 'react-icons/ai';
 const Tooltip = ({ hoveredInfo }) => {
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
@@ -193,7 +195,9 @@ const codonToAminoAcid = (codon) => {
   }
 };
 
-const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, searchInput }) => {
+const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, searchInput , zoomLevel}) => {
+
+  const zoomFactor = 2**zoomLevel;
 
 
   const isSelected = searchInput>=rowStart && searchInput<=rowEnd;
@@ -517,6 +521,27 @@ function SearchPanel({ searchPanelOpen,setSearchPanelOpen,searchInput,setSearchI
   );
 }
 
+const ConfigPanel = ({zoomLevel,setZoomLevel}) => {
+  // zoom slider
+  return (
+    <>
+    <AiOutlineZoomOut className="inline-block" />
+    <Slider
+      value={zoomLevel}
+      onChange={(x) => setZoomLevel(x)}
+      min={-5}
+      max={0}
+      step={0.1}
+      style={{ width: 100 }}
+      className="inline-block mx-5"
+    />
+    <AiOutlineZoomIn className="inline-block" />
+    </>
+  );
+};
+    
+
+
 
 
 
@@ -524,6 +549,7 @@ function SearchPanel({ searchPanelOpen,setSearchPanelOpen,searchInput,setSearchI
 function App() {
  
    const [searchPanelOpen, setSearchPanelOpen] = useState(false);
+   const [zoomLevel, setZoomLevel] = useState(0);
    // detect ctrl-F and open search panel
     useEffect(() => {
     const handleKeyDown = (e) => {
@@ -708,6 +734,13 @@ function App() {
         </div>
       )}
 
+      <div className="fixed bottom-0 right-0 z-10 w-96 bg-white">
+        <ConfigPanel 
+        zoomLevel={zoomLevel}
+        setZoomLevel={setZoomLevel}
+        />
+      </div>
+
 
      
     <div className="w-full">
@@ -758,6 +791,7 @@ function App() {
             rowId={virtualitem.index}
             searchInput={intSearchInput-1}
             renderProperly={true}
+            zoomLevel={zoomLevel}
           
             />
             </div>)
