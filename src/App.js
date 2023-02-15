@@ -1060,6 +1060,7 @@ const App = () => {
     const response = await fetch(url);
     const text = await response.text();
     setGenbankString(text);
+    setLoading(false);
   };
 
   const loadFromFile = async (file) => {
@@ -1125,6 +1126,9 @@ onDrop={(e) => {
 
 
 >
+<div className="fixed bottom-5 text-center w-full">
+    <a className="text-gray-300 hover:text-gray-500" href="https://github.com/theosanderson/gensplore">View code on GitHub</a>
+</div>
 
 
 <h3 className="text-2xl mr-3 text-gray-700 ml-3 font-bold text-center mt-4 mb-4 ">
@@ -1170,7 +1174,12 @@ onDrop={(e) => {
         </li>
       </ul>
 </div>
+
 </div>
+<div>
+ 
+</div>
+
 </div>
 
     )}
