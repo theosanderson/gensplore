@@ -507,7 +507,7 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
     onMouseUp={e => {
       // figure out which nucleotide was clicked
       const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
-      const nucleotide = Math.floor((x - extraPadding) / sep -0.5) + rowStart;
+      const nucleotide = Math.floor((x - extraPadding) / sep +0.5) + rowStart;
       if (Math.abs(nucleotide - whereMouseWentDown) <= 1) {
         // if the mouse didn't move, then this is a click
 
