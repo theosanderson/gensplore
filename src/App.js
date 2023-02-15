@@ -318,7 +318,7 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
 
   // Calculate dimensions and tick interval
   const width = rowSequence.length * 10; // 10 pixels per character
-  let height = 70 + featureBlocks.length * 15;
+  let height = 70 + featureBlocks.length * 20;
   const numTicks = Math.ceil(width / 60); // One tick every 60 pixels
   const tickInterval = Math.ceil(rowSequence.length / numTicks);
 
@@ -364,7 +364,7 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
   const featureBlocksSVG = featureBlocks.map((feature, i) => {
     const x = feature.start * 10;
     const width = (feature.end - feature.start) * 10;
-    const y = 7 + i * 15;
+    const y = 7 + i * 20;
     const extraFeat=5;
     const codonPad =15;
     
@@ -379,7 +379,7 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
         </text>
         {
           feature.codonMap.map((codon, j) => {
-            return (
+            return (<>
               <text key={j} x={codon.start*10} y={y+9} textAnchor="middle" fontSize="10"
               onMouseOver={
                 () => setHoveredInfo({
@@ -393,6 +393,11 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
               >
                 {codon.aminoAcid}
               </text>
+              <text key={j} x={codon.start*10} y={y-1} textAnchor="middle" fontSize="7" fillOpacity={0.4}>
+                {codon.codonIndex+1}
+              </text>
+              
+              </>
             );
           }
 
