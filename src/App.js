@@ -390,9 +390,11 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
               >
                 {codon.aminoAcid}
               </text>
+              {codon.start >2 &&
               <text key={"bb"+j} x={codon.start*10} y={y-1} textAnchor="middle" fontSize="7" fillOpacity={0.4}>
                 {codon.codonIndex+1}
               </text>
+        }
               
               </>
             );
@@ -728,6 +730,7 @@ function App() {
             width: '100%',
             position: 'relative',
           }}
+          className="stripybg"
         >
          <div
           style={{
@@ -739,6 +742,7 @@ function App() {
               virtualItems[0].start - rowVirtualizer.options.scrollMargin
             }px)`,
           }}
+          className="whitebg"
         >
          
           {virtualItems.map((virtualitem) => {
