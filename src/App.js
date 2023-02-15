@@ -44,10 +44,17 @@ const useQueryState = query => {
 const Tooltip = ({ hoveredInfo }) => {
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
+  // position to right of mouse unless x is too close to right edge
+  const left_or_right = tooltipPosition.x > window.innerWidth - 200 ? {
+    right: `${window.innerWidth - tooltipPosition.x + 10}px`,
+  } : {
+    left: `${tooltipPosition.x + 10}px`,
+  };
+
   const tooltipStyles = {
     position: "absolute",
-    top: `${tooltipPosition.y + 20}px`,
-    left: `${tooltipPosition.x + 0}px`,
+    top: `${tooltipPosition.y + 10}px`,
+    ...left_or_right,
     visibility: hoveredInfo ? "visible" : "hidden",
     
     zIndex: 1000,
