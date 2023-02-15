@@ -642,8 +642,8 @@ function App() {
   
   let  rowWidth= Math.floor(width*.0965/(2**zoomLevel));
   // rowWidth minimum 50
-  if (rowWidth < 40) {
-    rowWidth = 40;
+  if (rowWidth < 30) {
+    rowWidth = 30;
   }
   //console.log("rowWidth", rowWidth);
 
