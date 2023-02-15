@@ -1087,6 +1087,7 @@ const App = () => {
   const ready = genbankString && (loaded || gbUrl);
 
   const [beingDraggedOver, setBeingDraggedOver] = useState(false);
+  const [genbankId, setGenbankId] = useState(null);
 
   
 
@@ -1152,9 +1153,43 @@ onDrop={(e) => {
       />
     </div>
   </div>
-  <div className="flex flex-row justify-center mt-5 border-t border-gray-300 pt-5 text-center">
+ 
+<div className="flex flex-row justify-center mt-5 border-t border-gray-300 pt-5 text-center ">
+  
     <div className="flex flex-col">
-      <h2 className="text-l">Or select an example:</h2>
+      <h2 className="text-l mb-5">or enter a GenBank ID:</h2>
+     <div>
+     <input
+        type="text"
+        className="border rounded-lg py-2 px-3 mt-2focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+        onChange={(e) => setGenbankId(e.target.value)}
+        placeholder="NC..."
+      />
+      <button
+        className="bg-gray-100 ml-3 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow"
+        onClick={() =>{
+          const strippedOfWhitespace = genbankId.replace(/\s/g, '')
+          // if no length, do nothing
+          if (strippedOfWhitespace.length<= 3) {
+            return
+          }
+
+          const url = `https://genbank-api.vercel.app/api/genbank/${strippedOfWhitespace}` 
+          setGbUrl(url)
+        }
+        }
+      >
+        Load
+      </button>
+     </div>
+
+      
+</div>
+
+</div>
+<div className="flex flex-row justify-center mt-5 border-t border-gray-300 pt-5 text-center">
+    <div className="flex flex-col">
+      <h2 className="text-l">or select an example:</h2>
       <ul>
         <li>
           <button
@@ -1176,10 +1211,6 @@ onDrop={(e) => {
 </div>
 
 </div>
-<div>
- 
-</div>
-
 </div>
 
     )}
