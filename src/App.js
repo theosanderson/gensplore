@@ -1221,7 +1221,7 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
 
 const App = () => {
   const addlExamples = [
-    ["Monkeypox clade II","NC_063383.1"],
+    ["Mpox clade II","NC_063383.1"],
     ["HIV-1","NC_001802.1"],
     ["M. tuberculosis","https://cov2tree.nyc3.cdn.digitaloceanspaces.com/gensplore/mtb.gb"],
     ["E. coli K12","https://cov2tree.nyc3.cdn.digitaloceanspaces.com/gensplore/k12.gb"]
