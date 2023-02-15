@@ -805,13 +805,16 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
      
     // ctrl-C
     if ((e.ctrlKey || e.metaKey) && e.keyCode === 67) {
-      e.preventDefault();
+      
       const selStart = Math.min(whereMouseWentDown,whereMouseWentUp);
       const selEnd = Math.max(whereMouseWentDown,whereMouseWentUp);
       //console.log(selStart,selEnd);
       const selectedText = genbankData.parsedSequence.sequence.substring(selStart,selEnd);
+      if (selectedText){
       console.log(selectedText);
       navigator.clipboard.writeText(selectedText);
+      e.preventDefault();
+      }
     }
 
 
