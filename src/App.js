@@ -540,17 +540,21 @@ const ConfigPanel = ({zoomLevel,setZoomLevel}) => {
   // zoom slider
   return (
     <>
-    <AiOutlineZoomOut className="inline-block" />
+    <button className="inline-block" onClick={() => setZoomLevel(
+      (x) => x-0.1
+    )}><AiOutlineZoomOut className="inline-block" /></button>
     <Slider
       value={zoomLevel}
       onChange={(x) => setZoomLevel(x)}
       min={-6.5}
       max={1}
-      step={0.01}
+      step={0.001}
       style={{ width: 150 }}
       className="inline-block mx-5"
     />
-    <AiOutlineZoomIn className="inline-block" />
+    <button className="inline-block" onClick={() => setZoomLevel(
+      (x) => x+0.1
+    )}><AiOutlineZoomIn className="inline-block" /></button>
     </>
   );
 };
@@ -564,7 +568,9 @@ const ConfigPanel = ({zoomLevel,setZoomLevel}) => {
 function App() {
  
    const [searchPanelOpen, setSearchPanelOpen] = useState(false);
-   const [zoomLevel, setZoomLevel] = useState(0);
+   const [zoomLevel, setRawZoomLevel] = useState(0);
+   
+
    // detect ctrl-F and open search panel
     useEffect(() => {
     const handleKeyDown = (e) => {
@@ -702,6 +708,26 @@ function App() {
 
 
   const virtualItems = rowVirtualizer.getVirtualItems();
+  const [centeredNucleotide, setCenteredNucleotide] = useState(null);
+
+  const setZoomLevel = (x) => {
+    const middleRow = virtualItems[Math.floor(virtualItems.length / 2)].index
+    const middleRowStart = rowData[middleRow].rowStart;
+    const middleRowEnd = rowData[middleRow].rowEnd;
+    const middleRowMiddle = Math.floor((middleRowStart + middleRowEnd) / 2);
+    setCenteredNucleotide(middleRowMiddle);
+    console.log("middleRowMiddle", middleRowMiddle);
+    setRawZoomLevel(x);
+ }
+
+ useEffect(() => {
+    if (!centeredNucleotide) return;
+    const row = Math.floor(centeredNucleotide / rowWidth);
+    rowVirtualizer.scrollToIndex(row, {align:"center",
+    smoothScroll:false});
+    setCenteredNucleotide(null);
+    console.log("scrolling to", centeredNucleotide);
+  }, [centeredNucleotide,zoomLevel]);
 
 
   useEffect(() => {
