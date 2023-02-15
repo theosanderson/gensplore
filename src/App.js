@@ -998,7 +998,7 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
 
   const rowVirtualizer = useWindowVirtualizer({
     count: rowData.length,
-    estimateSize: () => 60,
+    estimateSize: () => 90,
     scrollMargin: parentOffsetRef.current,
   })
 
