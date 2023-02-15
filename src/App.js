@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from "react";
 
 import './App.css';
 
@@ -6,7 +6,7 @@ import { genbankToJson } from "bio-parsers";
 import { useMeasure } from 'react-use'; // or just 'react-use-measure'
 import {FaSearch,FaTimes} from 'react-icons/fa';
 import {DebounceInput} from 'react-debounce-input';
-
+import { useVirtualizer, useWindowVirtualizer} from '@tanstack/react-virtual';
 const Tooltip = ({ hoveredInfo }) => {
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
@@ -193,12 +193,8 @@ const codonToAminoAcid = (codon) => {
   }
 };
 
-const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, searchInput, renderProperly }) => {
-  if (!renderProperly)
-  {
-    return <div style={{height:60, borderBottom: "1px solid #eee"}}
-    id={`row-${rowId}`}></div>
-  }
+const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, searchInput }) => {
+
 
   const isSelected = searchInput>=rowStart && searchInput<=rowEnd;
   if(isSelected){
@@ -209,6 +205,7 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
 
   const fullSequence = parsedSequence.sequence;
   const rowSequence = fullSequence.slice(rowStart, rowEnd);
+
   const relevantFeatures = parsedSequence.features.filter(
     (feature) => (
       feature.type !== "source" && 
@@ -393,7 +390,7 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, se
               >
                 {codon.aminoAcid}
               </text>
-              <text key={j} x={codon.start*10} y={y-1} textAnchor="middle" fontSize="7" fillOpacity={0.4}>
+              <text key={"bb"+j} x={codon.start*10} y={y-1} textAnchor="middle" fontSize="7" fillOpacity={0.4}>
                 {codon.codonIndex+1}
               </text>
               
@@ -547,7 +544,7 @@ function App() {
     };
   }, []);
   const [ref, { width }] = useMeasure();
-  //console.log("width", width);
+  
   const [hoveredInfo, setHoveredInfo] = useState(null);
   const [genbankData, setGenbankData] = useState(null);
   const [searchInput, setSearchInput] = useState(null);
@@ -614,41 +611,76 @@ function App() {
   if (rowWidth < 40) {
     rowWidth = 40;
   }
+  //console.log("rowWidth", rowWidth);
 
 
-  // useEffect
-  useEffect(() => {
-    if(!intSearchInput) return;
-    const row = Math.floor(intSearchInput / rowWidth);
-    console.log("row", row);
-  
-    
 
-    setTimeout(() => {
-      const rowElement = document.getElementById(`row-${row}`);
-    if (!rowElement) return;
-      rowElement.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 100);
-    setTimeout(() => {
-      const rowElement = document.getElementById(`row-${row}`);
-      if (!rowElement) return;
-      rowElement.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 1000);
-  }, [intSearchInput]);
-
-  if (!genbankData ) {
-    return <div>Loading...</div>;
+  let fullSequence, sequenceLength;
+  if(genbankData){
+    fullSequence = genbankData.parsedSequence.sequence;
+    sequenceLength = fullSequence.length;
   }
 
-  const rowData = [];
-  const fullSequence = genbankData.parsedSequence.sequence;
-  const sequenceLength = fullSequence.length;
+
+  const rowData = useMemo(() => {
+    if (!fullSequence) return [];
+    const rowData = [];
+
+  
+  
   for (let i = 0; i < sequenceLength; i += rowWidth) {
+   
     rowData.push({
       rowStart: i,
       rowEnd: (i + rowWidth > sequenceLength ? sequenceLength : i + rowWidth)
     });
   }
+  return rowData;
+}
+, [fullSequence, rowWidth,sequenceLength]);
+
+
+  const parentRef = useRef(null);
+  const parentOffsetRef = useRef(0);
+
+  useLayoutEffect(() => {
+    parentOffsetRef.current = parentRef.current?.offsetTop ?? 0
+  }, [])
+
+  
+
+
+  const rowVirtualizer = useWindowVirtualizer({
+    count: rowData.length,
+    estimateSize: () => 60,
+    scrollMargin: parentOffsetRef.current,
+  })
+
+
+
+  const virtualItems = rowVirtualizer.getVirtualItems();
+
+
+  useEffect(() => {
+    if(!intSearchInput) return;
+    const row = Math.floor(intSearchInput / rowWidth);
+    rowVirtualizer.scrollToIndex(row, {align:"center",
+    smoothScroll:true});
+  
+    
+
+  }, [intSearchInput]);
+
+
+  //console.log("virtualItems", virtualItems);
+
+  if (!genbankData ) {
+    return <div>Loading...</div>;
+  }
+
+  
+
+  
 
   if(!width){
     return (
@@ -676,10 +708,10 @@ function App() {
 
 
      
-    <div ref={ref} className="w-full">
+    <div className="w-full">
       <Tooltip hoveredInfo={hoveredInfo} />
       {genbankData && (
-        <div>
+        <div ref={ref} >
           <h2 className="text-2xl"
           >{genbankData.parsedSequence.name}</h2>
           <div>
@@ -689,18 +721,47 @@ function App() {
             
 
             </div>
-         <div className="mt-5">
-          {rowData.map((row, index) => (
-            <SingleRow key={index} parsedSequence={genbankData.parsedSequence} rowStart={row.rowStart} rowEnd={row.rowEnd}
+         <div ref={parentRef}  className="mt-5 h-80">
+         <div
+          style={{
+            height: rowVirtualizer.getTotalSize(),
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+         <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            transform: `translateY(${
+              virtualItems[0].start - rowVirtualizer.options.scrollMargin
+            }px)`,
+          }}
+        >
+         
+          {virtualItems.map((virtualitem) => {
+            const row = rowData[virtualitem.index];
+            //return (<div>{genbankData.parsedSequence.sequence.slice(row.start,row.end)}</div>)
+            return (
+            <div ref={rowVirtualizer.measureElement}
+            data-index={virtualitem.index}
+            key={virtualitem.key}>
+              <SingleRow key={virtualitem.index} parsedSequence={genbankData.parsedSequence} rowStart={row.rowStart} rowEnd={row.rowEnd}
             rowWidth={rowWidth}
             setHoveredInfo={setHoveredInfo}
-            rowId={index}
+            rowId={virtualitem.index}
             searchInput={intSearchInput-1}
-            renderProperly={(Math.abs(whereOnPage - (index / rowData.length)) < 0.2)
-            || (row.rowStart>=intSearchInput && row.rowEnd<=intSearchInput)}
+            renderProperly={true}
           
             />
-          ))}
+            </div>)
+ } 
+          )
+}
+          </div>
+          </div>
           </div>
 
 
