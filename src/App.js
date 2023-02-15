@@ -1135,7 +1135,7 @@ onDrop={(e) => {
    
    
     <div className="flex flex-col">
-      <h2 className="text-l">Upload a GenBank file , or drag and drop</h2>
+      <h2 className="text-l">Upload a GenBank file, or drag and drop</h2>
       {beingDraggedOver && (
         <div className="border rounded-lg py-2 px-3 mt-2 text-center text-green-500">
           Drop file now to load
