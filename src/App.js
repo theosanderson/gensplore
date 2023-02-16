@@ -1349,7 +1349,8 @@ const App = () => {
 
   useEffect(() => {
     if (debouncedId) {
-      doGenBankSearch(debouncedId);
+      //doGenBankSearch(debouncedId);
+      console.log("would search")
     }
   }, [debouncedId]);
 
