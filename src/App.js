@@ -1331,7 +1331,7 @@ const App = () => {
   const [genbankResults, setGenbankResults] = useState(null);
   
   const doGenBankSearch = async (searchTerm) => {
-    let query = searchTerm + ' AND genome AND (biomol_genomic[PROP] AND ("1"[SLEN] : "100000000"[SLEN]))'
+    let query = searchTerm + ' AND genome AND (biomol_genomic[PROP] AND ("1"[SLEN] : "1000000"[SLEN]))'
     /// restrict to viruses, bacteria and protists, or SAR
     query += ' AND ("Viruses"[Organism] OR "Bacteria"[Organism] OR "Protista"[Organism] OR "SAR"[Organism])'
     const url = `https://genbank-api.vercel.app/api/genbank_search/${query}`
