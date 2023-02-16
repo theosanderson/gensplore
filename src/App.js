@@ -21,6 +21,27 @@ import { U } from "ve-sequence-utils/lib/DNAComplementMap";
 var colorHash = new ColorHash({ lightness: [0.75, 0.9, 0.7, 0.8] });
 
 
+function useDebounce(value, delay) {
+  // State and setters for debounced value
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(
+    () => {
+      // Update debounced value after delay
+      const handler = setTimeout(() => {
+        setDebouncedValue(value);
+      }, delay);
+      // Cancel the timeout if value changes (also on delay change or unmount)
+      // This is how we prevent debounced value from updating if value is changed ...
+      // .. within the delay period. Timeout gets cleared and restarted.
+      return () => {
+        clearTimeout(handler);
+      };
+    },
+    [value, delay] // Only re-call effect if value or delay changes
+  );
+  return debouncedValue;
+}
+
 const filterFeatures = (features, search) => {
   return features.filter((feature) => {
     // if feature name contains search string
@@ -409,7 +430,7 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, in
               locations[k + 1].start;
             const lastChar = fullSequence.slice(lastIndex, lastIndex + 1);
             const codonSeq = firstChar + middleChar + lastChar;
-            console.log(nucIndex, locations[k].start, firstChar, middleChar, lastChar);
+            //console.log(nucIndex, locations[k].start, firstChar, middleChar, lastChar);
 
 
 
@@ -518,11 +539,10 @@ const SingleRow = ({ parsedSequence, rowStart, rowEnd, setHoveredInfo, rowId, in
 
   const featureBlocksSVG = featureBlocks.map((feature, i) => {
     const x = feature.start * sep;
-    console.log(x, "x");
-
+    
 
     const width = (feature.end - feature.start) * sep;
-    console.log(width, "width");
+    
     const y = 7 + i * 20;
     const extraFeat = 5 * zoomFactor;
     const codonPad = 15 * zoomFactor;
@@ -1308,6 +1328,32 @@ const App = () => {
     setGbUrl(url)
   }
 
+  const [genbankResults, setGenbankResults] = useState(null);
+  
+  const doGenBankSearch = async (searchTerm) => {
+    let query = searchTerm + ' AND genome AND (biomol_genomic[PROP] AND ("1"[SLEN] : "1000000"[SLEN]))'
+    /// restrict to viruses, bacteria and protists, or SAR
+    query += ' AND ("Viruses"[Organism] OR "Bacteria"[Organism] OR "Protista"[Organism] OR "SAR"[Organism])'
+    const url = `https://genbank-api.vercel.app/api/genbank_search/${query}`
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          data = data.filter(d => d.accession!="uids")
+          setGenbankResults(data)
+        })
+  }
+  // debounce the search
+  const debouncedId = useDebounce(genbankId, 500);
+
+
+
+  useEffect(() => {
+    if (debouncedId) {
+      doGenBankSearch(debouncedId);
+    }
+  }, [debouncedId]);
+
+
 
   // create UI for loading from URL or file
   return (<>
@@ -1386,6 +1432,7 @@ const App = () => {
                 placeholder="NC..."
                 onKeyUp={(e) => {
                   if (e.key === "Enter") {
+                    
                     loadFromGenbankId(genbankId)
                   }
                 }
@@ -1398,7 +1445,7 @@ const App = () => {
                 }
                 }
               >
-                Load
+                Load accession
               </button>
             </div>
             <div>
@@ -1407,6 +1454,34 @@ const App = () => {
                   This will only work for virus-sized genomes, for bacterial genomes please upload a file above.
                 </p>)}
             </div>
+            {genbankResults && genbankResults.length > 0 && (
+
+
+
+<div className="mt-5 text-xs">
+  <h3 className="text-l">We also tried searching for this query:</h3>
+  <div 
+  // scroll y
+  className="h-24 overflow-y-auto"
+  >
+  <ul>
+    {genbankResults.map((result) => (
+      <li key={result.description}>
+        <button
+          className="text-blue-400 hover:text-blue-700 mb-1 mt-1"
+          onClick={() => setGbUrl(`https://genbank-api.vercel.app/api/genbank/${result.description}`)}
+        >
+          {result.description}: {result.title}
+        </button>
+      </li>
+    ))}
+  </ul>
+  </div>
+
+</div>
+)}
+              
+           
 
 
           </div>
