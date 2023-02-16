@@ -843,7 +843,7 @@ const ConfigPanel = ({ zoomLevel, setZoomLevel }) => {
       <Slider
         value={zoomLevel}
         onChange={(x) => setZoomLevel(x)}
-        min={-6.5}
+        min={-9.5}
         max={1}
         step={0.001}
         style={{ width: 150 }}
