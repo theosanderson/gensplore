@@ -399,8 +399,8 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
       for (let k = 0; k < locations.length; k++) {
         if (j >= locations[k].start && j <= locations[k].end) {
           
-          const codonStart =  (j );
-          const codonEnd = codonStart + 2;
+          const nucIndex =  (j );
+          
           const codonIndexInitial = Math.floor((j - (locations[k].start - positionSoFar)) / 3);
           const codonIndex = feature.strand>0 ? codonIndexInitial : seqLength/3 - codonIndexInitial -1;
           const frame = (j - (locations[k].start - positionSoFar)) % 3;
@@ -408,8 +408,16 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
             continue;
           }
 
-
-          const codonSeq = fullSequence.slice(codonStart-1, codonEnd );
+          const middleIndex = nucIndex
+          const middleChar = fullSequence.slice(middleIndex, middleIndex + 1);
+          const firstIndex = nucIndex - locations[k].start >0 ? nucIndex-1 : 
+          locations[k-1].end;
+          const firstChar = fullSequence.slice(firstIndex, firstIndex + 1);
+          const lastIndex = nucIndex < locations[k].end ? nucIndex+1 :
+          locations[k+1].start;
+          const lastChar = fullSequence.slice(lastIndex, lastIndex + 1);
+          const codonSeq = firstChar + middleChar + lastChar;
+          console.log(nucIndex,locations[k].start,firstChar, middleChar, lastChar);
          
 
           
@@ -417,8 +425,9 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
           //const aminoAcid = forTranslation[codonIndex];
           
           codonMap.push({
-            start: codonStart- rowStart,
-            end: codonEnd - rowStart,
+            first: firstIndex - rowStart,
+            middle: nucIndex- rowStart,
+            last: lastIndex - rowStart,
             aminoAcid: aminoAcid,
             codonIndex: codonIndex,
             gene: feature.name,
@@ -561,7 +570,7 @@ const codonZoomThreshold = -2
           feature.codonMap.map((codon, j) => {
             return (<>
               {
-                zoomLevel> codonZoomThreshold && <text key={j} x={codon.start*sep} y={y+9} textAnchor="middle" fontSize="10"
+                zoomLevel> codonZoomThreshold && <text key={j} x={codon.middle*sep} y={y+9} textAnchor="middle" fontSize="10"
               onMouseOver={
                 () => setHoveredInfo({
                   label: `${betterName}: ${codon.aminoAcid}${codon.codonIndex+1}`,
@@ -577,8 +586,8 @@ const codonZoomThreshold = -2
               >
                 {codon.aminoAcid}
               </text>}
-              {codon.start >2 && zoomLevel> -0.5 &&
-              <text key={"bb"+j} x={codon.start*sep} y={y-1} textAnchor="middle" fontSize="7" fillOpacity={0.4}
+              {codon.middle >2 && zoomLevel> -0.5 &&
+              <text key={"bb"+j} x={codon.middle*sep} y={y-1} textAnchor="middle" fontSize="7" fillOpacity={0.4}
               //fontWeight="bold"
               >
                 {codon.codonIndex+1}
@@ -598,10 +607,10 @@ const codonZoomThreshold = -2
 
             return (
               <g key={j}>
-                {codon.start>1 && codon.start<3 &&
-                <line x1={codon.start*sep-codonPad} y1={y} x2={codon.start*sep-codonPad} y2={y+10} stroke="black" strokeOpacity={0.1} />
+                {codon.middle>1 && codon.middle<3 &&
+                <line x1={codon.middle*sep-codonPad} y1={y} x2={codon.middle*sep-codonPad} y2={y+10} stroke="black" strokeOpacity={0.1} />
           }
-                <line x1={codon.start*sep+codonPad} y1={y} x2={codon.start*sep+codonPad} y2={y+10} stroke="black" strokeOpacity={0.1} />
+                <line x1={codon.middle*sep+codonPad} y1={y} x2={codon.middle*sep+codonPad} y2={y+10} stroke="black" strokeOpacity={0.1} />
               </g>
             );
 
