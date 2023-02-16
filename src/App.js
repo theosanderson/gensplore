@@ -941,11 +941,14 @@ function GensploreView({genbankString, searchInput, setSearchInput}) {
       const selStart = Math.min(whereMouseWentDown,whereMouseWentUp);
       const selEnd = Math.max(whereMouseWentDown,whereMouseWentUp);
       //console.log(selStart,selEnd);
-      const selectedText = genbankData.parsedSequence.sequence.substring(selStart,selEnd);
+      let selectedText = genbankData.parsedSequence.sequence.substring(selStart,selEnd);
       if (selectedText){
+      if (e.shiftKey ){
+        selectedText = getReverseComplement(selectedText);
+      }
       console.log(selectedText);
       navigator.clipboard.writeText(selectedText);
-      toast.success("Copied to clipboard");
+      toast.success(`Copied ${e.shiftKey ? "reverse complement" : ""} to clipboard`);
       e.preventDefault();
       }
     }
