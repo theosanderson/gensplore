@@ -780,7 +780,7 @@ function SearchPanel({ searchPanelOpen,setSearchPanelOpen,searchInput,setSearchI
         value={searchInput}
         onChange={handleInputChange}
         className="mx-2 bg-white focus:outline-none focus:shadow-outline border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal"
-        placeholder="nuc index"
+        placeholder={searchType === "nuc" ? "nuc. index" : "gene name"}
         id="search-input"
         // don't autocomplete
         autoComplete="off"
