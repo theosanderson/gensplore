@@ -468,7 +468,7 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
   let height = 70 + featureBlocks.length * 20;
   const approxNumTicks = Math.ceil(width / 60); // One tick every 60 pixels
   let tickInterval = Math.ceil(rowSequence.length / approxNumTicks);
-  const options = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000];
+  const options = [ 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000];
   // find nearest option to tickInterval
   tickInterval = options.reduce((prev, curr) => (Math.abs(curr - tickInterval) < Math.abs(prev - tickInterval) ? curr : prev));
   const modulus = rowStart % tickInterval;
