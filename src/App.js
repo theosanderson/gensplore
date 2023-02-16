@@ -392,7 +392,7 @@ whereMouseCurrentlyIs,setWhereMouseCurrentlyIs}) => {
     const seqLength = locations.reduce((acc, location) => acc + location.end - location.start + 1, 0);
 
     const codonMap = [];
-    if (feature.type=="CDS" | feature.type=="mat_peptide"){
+    if (zoomLevel > (-2) && (feature.type=="CDS" | feature.type=="mat_peptide")){
 
     for (let j = rowStart; j < rowEnd; j++) {
       let positionSoFar = 0;
