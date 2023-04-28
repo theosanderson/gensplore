@@ -285,6 +285,8 @@ FEATURES             Location/Qualifiers
                      RGPEQTQGNFGDQELIRQGTDYKHWPQIAQFAPSASAFFGMSRIGMEVTPSGTWLTYT
                      GAIKLDDKDPNFKDQVILLNKHIDAYKTFPPTEPKKDKKKKADETQALPQRQKKQQTV
                      TLLPAADLDDFSKQLQQSMSSADSTQA"
+     CDS             28284..28577
+                     /gene="ORF9B"
      gene            29558..29674
                      /gene="ORF10"
      CDS             29558..29674
