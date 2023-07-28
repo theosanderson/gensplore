@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import "rc-slider/assets/index.css";
 import "./App.css";
+import { Dialog } from "@headlessui/react";
 
 import ClipLoader from "react-spinners/ClipLoader";
 import { genbankToJson } from "bio-parsers";
@@ -17,6 +18,8 @@ import { DebounceInput } from "react-debounce-input";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import Slider, { Range } from "rc-slider";
 import { AiOutlineZoomIn, AiOutlineZoomOut } from "react-icons/ai";
+// settings icon
+import { MdSettings } from "react-icons/md";
 import { GiDna1 } from "react-icons/gi";
 import {BsArrowRightCircleFill, BsArrowLeftCircleFill} from "react-icons/bs";
 import { ToastContainer, toast } from "react-toastify";
@@ -156,10 +159,13 @@ function SearchPanel({
   );
 }
 
-const ConfigPanel = ({ zoomLevel, setZoomLevel }) => {
+const ConfigPanel = ({ zoomLevel, setZoomLevel, configModalOpen, setConfigModalOpen }) => {
   // zoom slider
   return (
     <>
+    <button className="inline-block mr-4 text-gray-400" onClick={() => setConfigModalOpen(true)}>
+      <MdSettings className="inline-block" />
+    </button>
       <button
         className="inline-block"
         onClick={() => setZoomLevel((x) => x - 0.1)}
@@ -173,7 +179,7 @@ const ConfigPanel = ({ zoomLevel, setZoomLevel }) => {
         max={1}
         step={0.001}
         style={{ width: 150 }}
-        className="inline-block mx-5"
+        className="inline-block mx-3"
       />
       <button
         className="inline-block"
@@ -378,6 +384,8 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
   }, [centeredNucleotide, zoomLevel]);
 
   const [lastSearch, setLastSearch] = useState(null);
+  const [enableRC, setEnableRC] = useState(false);
+  const [configModalOpen, setConfigModalOpen] = useState(false);
 
   useEffect(() => {
     if (!intSearchInput) return;
@@ -470,7 +478,43 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
     );
   }
 
-  return (
+  return (<>
+  <Dialog
+  open={configModalOpen}
+  onClose={() => setConfigModalOpen(false)}
+  className="fixed z-50 max-w-2xl px-4 py-6 bg-white rounded-lg shadow-xl sm:px-6 sm:py-8 sm:pb-4 sm:pt-6"
+>
+
+  <Dialog.Panel
+    className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-75 transition-opacity"
+    style={{ zIndex: 1000 }}
+  >
+    <div className="bg-white rounded-lg px-4 py-4 sm:px-6 sm:py-6 shadow-md max-w-md mx-auto">
+      <Dialog.Title
+        as="h3"
+        className="text-lg font-medium leading-6 text-gray-900 mb-4"
+      >
+      Settings
+      </Dialog.Title>
+
+      <Dialog.Description
+        className="text-base text-gray-600 mb-4"
+      >
+        Customize appearance
+      </Dialog.Description>
+
+      <p className="text-sm text-gray-500">
+      <label>
+        <input type="checkbox" checked={enableRC} onChange={(e) => setEnableRC(e.target.checked)} /> 
+        <span className="ml-2">Display antisense strand</span>
+        </label>
+      </p>
+
+    </div>
+  </Dialog.Panel>
+</Dialog>
+
+
     <div className="w-full p-5">
       <ToastContainer />
       {true && (
@@ -491,8 +535,8 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
         </div>
       )}
 
-      <div className="fixed bottom-0 right-0 z-10 w-64 h-12 p-2 rounded shadow bg-white">
-        <ConfigPanel zoomLevel={zoomLevel} setZoomLevel={setZoomLevel} />
+      <div className="fixed bottom-0 right-0 z-10 w-72 h-12 p-2 rounded shadow bg-white">
+        <ConfigPanel zoomLevel={zoomLevel} setZoomLevel={setZoomLevel} configModalOpen={configModalOpen} setConfigModalOpen={setConfigModalOpen} />
       </div>
 
       <div className="w-full">
@@ -571,6 +615,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
                           setWhereMouseCurrentlyIs={setWhereMouseCurrentlyIs}
                           sequenceHits={sequenceHits}
                           curSeqHitIndex={curSeqHitIndex}
+                          enableRC={enableRC}
                         />
                       </div>
                     );
@@ -582,6 +627,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
         )}
       </div>
     </div>
+    </>
   );
 }
 
