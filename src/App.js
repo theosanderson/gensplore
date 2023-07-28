@@ -114,7 +114,7 @@ function SearchPanel({
       )}
       </div>
       {
-        searchType === "sequence" && (
+        searchType === "sequence" && searchInput && searchInput.length>0&& (
           <div className="my-2 text-gray-400 text-left px-3">
             <label className="text-gray-900"> <input type="checkbox" value={includeRC} onChange={() => {
               
