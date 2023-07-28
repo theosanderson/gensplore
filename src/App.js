@@ -26,6 +26,8 @@ import Tooltip from "./components/Tooltip";
 import { getReverseComplement, filterFeatures } from "./utils";
 import SingleRow from "./components/SingleRow";
 
+
+
 function SearchPanel({
   searchPanelOpen,
   setSearchPanelOpen,
@@ -35,7 +37,9 @@ function SearchPanel({
   setSearchType,
   curSeqHitIndex,
   sequenceHits,
-  setCurSeqHitIndex
+  setCurSeqHitIndex,
+  includeRC,
+  setIncludeRC
 }) {
   const handleInputChange = (event) => {
     setCurSeqHitIndex(0);
@@ -111,12 +115,21 @@ function SearchPanel({
       </div>
       {
         searchType === "sequence" && (
-          <div className="my-2 text-gray-800 text-center px-3">
+          <div className="my-2 text-gray-400 text-left px-3">
+            <input type="checkbox" value={includeRC} onChange={() => {
+              
+              setIncludeRC(!includeRC);
+          setCurSeqHitIndex(0);
+            }
+            
+        }/>
+            <label className="ml-2 text-gray-900">Include reverse complement</label>
+
             {sequenceHits.length > 0 && (
               <>
               <button>
                 <BsArrowLeftCircleFill onClick={() => setCurSeqHitIndex((x) => x==0? sequenceHits.length-1: x-1)}
-                className="mx-3 text-gray-400" />
+                className="mx-3 text-gray-600" />
               </button>
           
           
@@ -187,6 +200,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
   const [genbankData, setGenbankData] = useState(null);
   const [sequenceHits, setSequenceHits] = useState([]);
   const [curSeqHitIndex, setCurSeqHitIndex] = useState(0);
+  const [includeRC, setIncludeRC] = useState(false);
 
   // safely convert searchInput to int
   const intSearchInput = searchType === "nuc" ? parseInt(searchInput) : null;
@@ -423,8 +437,13 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
     // we want to find all locations that match and store them with setSequenceHits as [start,end]
     const seqHits = [];
     let start = 0;
+    const rc = getReverseComplement(strippedSequenceInput);
+    console.log("rc", rc);
     while (true) {
-      const hit = fullSequence.indexOf(strippedSequenceInput, start);
+      const hit1 = fullSequence.indexOf(strippedSequenceInput, start);
+      const hit2 = includeRC ? fullSequence.indexOf(rc, start) : -1;
+      const hit = hit1 === -1 ? hit2 : (hit2 === -1 ? hit1 : Math.min(hit1, hit2));
+
       if (hit === -1) break;
       seqHits.push([hit, hit + strippedSequenceInput.length]);
       start = hit + 1;
@@ -435,7 +454,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
     console.log("row", row);
     rowVirtualizer.scrollToIndex(row + 1, { align: "center" });
     setLastSearch(sequenceSearchInput);
-  }, [sequenceSearchInput, curSeqHitIndex]);
+  }, [sequenceSearchInput, curSeqHitIndex,includeRC]);
 
 
   //console.log("virtualItems", virtualItems);
@@ -467,6 +486,8 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
             curSeqHitIndex={curSeqHitIndex}
             setCurSeqHitIndex={setCurSeqHitIndex}
             sequenceHits={sequenceHits}
+            includeRC={includeRC}
+            setIncludeRC={setIncludeRC}
           />
         </div>
       )}
