@@ -60,7 +60,7 @@ function SearchPanel({
   };
 
   const searchOption = [
-    { value: "nuc", label: "nucleotide" },
+    { value: "nuc", label: "nuc. index" },
     { value: "annot", label: "annotation" },
     { value: "sequence", label: "sequence"}
   ];
@@ -140,7 +140,7 @@ function SearchPanel({
           
               <button>
                 <BsArrowRightCircleFill onClick={() => setCurSeqHitIndex((x) => x==sequenceHits.length-1? 0: x+1)}
-                className="mx-3 text-gray-400" />
+                className="mx-3 text-gray-600" />
               </button>
               </>
             )}
