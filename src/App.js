@@ -60,7 +60,7 @@ function SearchPanel({
   };
 
   const searchOption = [
-    { value: "nuc", label: "nucleotide" },
+    { value: "nuc", label: "nuc. index" },
     { value: "annot", label: "annotation" },
     { value: "sequence", label: "sequence"}
   ];
