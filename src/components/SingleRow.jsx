@@ -171,7 +171,8 @@ const SingleRow = ({
   whereMouseCurrentlyIs,
   setWhereMouseCurrentlyIs,
   sequenceHits,
-  curSeqHitIndex
+  curSeqHitIndex,
+  enableRC
 }) => {
   const zoomFactor = 2 ** zoomLevel;
   const sep = 10 * zoomFactor;
@@ -386,6 +387,7 @@ const SingleRow = ({
 
   // Generate sequence characters
   let chars = null;
+  let chars2 = null;
 
   if (zoomLevel > -1) {
     chars = rowSequence.split("").map((char, i) => {
@@ -410,6 +412,34 @@ const SingleRow = ({
       );
     });
   }
+  const rc = {"A": "T", "T": "A", "C": "G", "G": "C", "N": "N"};
+  if (//window.RC &&
+   zoomLevel > -1) {
+    // Generate reverse complement sequence characters
+    chars2 = rowSequence.split("").map((char, i) => {
+      const x = i * sep;
+      return (
+        <text
+          key={i}
+          x={x}
+          y={10}
+          textAnchor="middle"
+          fontSize={zoomLevel < -0.5 ? "10" : "12"}
+          fillOpacity={0.9}
+          onMouseEnter={() =>
+            setHoveredInfo({
+              label: `Nucleotide ${i + rowStart + 1}: ${char}`,
+            })
+          }
+          onMouseLeave={() => setHoveredInfo(null)}
+        >
+          {rc[char]}
+        </text>
+      );
+    });
+  }
+
+
   const codonZoomThreshold = -2;
 
   const featureBlocksSVG = featureBlocks.map((feature, i) => {
@@ -682,7 +712,7 @@ const SingleRow = ({
     >
       <svg
         width={width + 40}
-        height={height - 20}
+        height={height - 20 + (enableRC ? 20 : 0)}
         style={{ position: "absolute", top: 0, left: 0 }}
       >
         {selectionRect}
@@ -690,6 +720,8 @@ const SingleRow = ({
           {sequenceHitRects}
         </g>
         <g fillOpacity={0.7}>
+        <g transform={enableRC ? `translate(0,20)` : ""}>
+        
           <g
             transform={`translate(${extraPadding}, ${height - 40})`}
             style={{ zIndex: -5 }}
@@ -704,16 +736,23 @@ const SingleRow = ({
           {
             // line above ticks
           }
-          <line
+          
+        </g>
+        </g>
+        <line
             x1={0 + extraPadding}
             y1={height - 40}
             x2={width + extraPadding + 0}
             y2={height - 40}
             stroke="black"
           />
-        </g>
 
         <g transform={`translate(${extraPadding}, ${height - 55})`}>{chars}</g>
+        
+        {enableRC &&
+          <g transform={`translate(${extraPadding}, ${height - 55 + 19})`}>{chars2}</g>
+
+        }
         <g transform={`translate(${extraPadding}, 5)`}>{featureBlocksSVG}</g>
        
       </svg>
