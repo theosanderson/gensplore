@@ -170,6 +170,8 @@ const SingleRow = ({
   setWhereMouseWentUp,
   whereMouseCurrentlyIs,
   setWhereMouseCurrentlyIs,
+  sequenceHits,
+  curSeqHitIndex
 }) => {
   const zoomFactor = 2 ** zoomLevel;
   const sep = 10 * zoomFactor;
@@ -601,6 +603,41 @@ const SingleRow = ({
     );
   }
 
+  let sequenceHitRects = null;
+
+  if(sequenceHits.length > 0){
+    sequenceHitRects = [];
+    for(let i = 0; i < sequenceHits.length; i++){
+      const hit = sequenceHits[i];
+      let [start, end] = hit;
+      // if the hit is outside the current view, skip it
+      if(start > rowEnd || end < rowStart){
+        continue;
+      }
+      // if the hit is partially outside the current view, clip it
+      if(start < rowStart){
+        start = rowStart;
+      }
+      if(end > rowEnd){
+        end = rowEnd;
+      }
+      sequenceHitRects.push(
+        <rect
+          x={extraPadding + (start - rowStart - 0.5) * sep}
+          y={0}
+          width={(end - start) * sep}
+          height={height}
+          fill={i==curSeqHitIndex? "#ff8888":"#ffbbbb"}
+          fillOpacity={0.5}
+        />
+      );
+    }
+  }
+
+            
+
+
+
   // Concatenate sequence characters and ticks with SVG
   return (
     <div
@@ -649,6 +686,9 @@ const SingleRow = ({
         style={{ position: "absolute", top: 0, left: 0 }}
       >
         {selectionRect}
+        <g>
+          {sequenceHitRects}
+        </g>
         <g fillOpacity={0.7}>
           <g
             transform={`translate(${extraPadding}, ${height - 40})`}
@@ -675,6 +715,7 @@ const SingleRow = ({
 
         <g transform={`translate(${extraPadding}, ${height - 55})`}>{chars}</g>
         <g transform={`translate(${extraPadding}, 5)`}>{featureBlocksSVG}</g>
+       
       </svg>
     </div>
   );
