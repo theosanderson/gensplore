@@ -18,13 +18,15 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import Slider, { Range } from "rc-slider";
 import { AiOutlineZoomIn, AiOutlineZoomOut } from "react-icons/ai";
 import { GiDna1 } from "react-icons/gi";
-
+import {BsArrowRightCircleFill, BsArrowLeftCircleFill} from "react-icons/bs";
 import { ToastContainer, toast } from "react-toastify";
 import { useDebounce, useQueryState } from "./hooks";
 import "react-toastify/dist/ReactToastify.css";
 import Tooltip from "./components/Tooltip";
 import { getReverseComplement, filterFeatures } from "./utils";
 import SingleRow from "./components/SingleRow";
+
+
 
 function SearchPanel({
   searchPanelOpen,
@@ -33,23 +35,39 @@ function SearchPanel({
   setSearchInput,
   searchType,
   setSearchType,
+  curSeqHitIndex,
+  sequenceHits,
+  setCurSeqHitIndex,
+  includeRC,
+  setIncludeRC
 }) {
   const handleInputChange = (event) => {
+    setCurSeqHitIndex(0);
     setSearchInput(event.target.value);
+    // if event.target.value has only ACGT characters, then set searchType to sequence
     // if event.target.value has non-numeric characters, then set searchType to annot
-    if (event.target.value.match(/[^0-9]/)) {
-      setSearchType("annot");
-      console.log("setting searchType to annot");
+    // if event.target.value has only numeric characters, then set searchType to nuc
+    if (/^[0-9]+$/.test(event.target.value)) {
+      setSearchType("nuc");
     }
+    else if (/^[ACGTacgt]+$/.test(event.target.value)) {
+      setSearchType("sequence");
+    }
+    else if (/^[^0-9]+$/.test(event.target.value)) {
+      setSearchType("annot");
+    }
+
   };
 
   const searchOption = [
     { value: "nuc", label: "nucleotide" },
     { value: "annot", label: "annotation" },
+    { value: "sequence", label: "sequence"}
   ];
 
   return (
-    <div className="bg-white p-1 text-sm shadow rounded flex items-center">
+    <div className="bg-white p-1 text-sm shadow rounded ">
+      <div className="flex items-center">
       {searchPanelOpen ? (
         <>
           <select
@@ -71,7 +89,7 @@ function SearchPanel({
             value={searchInput}
             onChange={handleInputChange}
             className="mx-2 bg-white focus:outline-none focus:shadow-outline border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal"
-            placeholder={searchType === "nuc" ? "nuc. index" : "gene name"}
+            placeholder={searchType === "nuc" ? "nuc. index" : searchType === "annot" ? "gene name" : "ATGGC.."}
             id="search-input"
             // don't autocomplete
             autoComplete="off"
@@ -94,6 +112,47 @@ function SearchPanel({
           <FaSearch className="mr-2" />
         </button>
       )}
+      </div>
+      {
+        searchType === "sequence" && (
+          <div className="my-2 text-gray-400 text-left px-3">
+            <input type="checkbox" value={includeRC} onChange={() => {
+              
+              setIncludeRC(!includeRC);
+          setCurSeqHitIndex(0);
+            }
+            
+        }/>
+            <label className="ml-2 text-gray-900">Include reverse complement</label>
+
+            {sequenceHits.length > 0 && (
+              <>
+              <button>
+                <BsArrowLeftCircleFill onClick={() => setCurSeqHitIndex((x) => x==0? sequenceHits.length-1: x-1)}
+                className="mx-3 text-gray-600" />
+              </button>
+          
+          
+            
+            
+            Hit {curSeqHitIndex + 1} of {sequenceHits.length}
+
+          
+              <button>
+                <BsArrowRightCircleFill onClick={() => setCurSeqHitIndex((x) => x==sequenceHits.length-1? 0: x+1)}
+                className="mx-3 text-gray-400" />
+              </button>
+              </>
+            )}
+            {sequenceHits.length === 0 && (
+              <>
+                No hits found
+              </>
+            )}
+          </div>
+        )
+
+      }
     </div>
   );
 }
@@ -139,10 +198,14 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
 
   const [hoveredInfo, setHoveredInfo] = useState(null);
   const [genbankData, setGenbankData] = useState(null);
+  const [sequenceHits, setSequenceHits] = useState([]);
+  const [curSeqHitIndex, setCurSeqHitIndex] = useState(0);
+  const [includeRC, setIncludeRC] = useState(false);
 
   // safely convert searchInput to int
   const intSearchInput = searchType === "nuc" ? parseInt(searchInput) : null;
   const annotSearchInput = searchType === "annot" ? searchInput : null;
+  const sequenceSearchInput = searchType === "sequence" ? searchInput.toUpperCase() : null;
 
   const [whereOnPage, setWhereOnPage] = useState(0);
 
@@ -351,6 +414,49 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
     setLastSearch(annotSearchInput);
   }, [annotSearchInput]);
 
+
+  useEffect(() => {
+    if(!sequenceSearchInput) {
+      setSequenceHits([]);
+      return;
+    }
+    const strippedSequenceInput = sequenceSearchInput.replace(/\s/g, "");
+    if (strippedSequenceInput === ""){
+      setSequenceHits([]);
+      return;
+    }
+    console.log("strippedSequenceInput", strippedSequenceInput);
+    const matchingSequence = fullSequence.indexOf(strippedSequenceInput);
+    
+    if(matchingSequence === -1) {
+      //toast.error("No matching sequence found");
+      setSequenceHits([]);
+
+      return;
+    }
+    // we want to find all locations that match and store them with setSequenceHits as [start,end]
+    const seqHits = [];
+    let start = 0;
+    const rc = getReverseComplement(strippedSequenceInput);
+    console.log("rc", rc);
+    while (true) {
+      const hit1 = fullSequence.indexOf(strippedSequenceInput, start);
+      const hit2 = includeRC ? fullSequence.indexOf(rc, start) : -1;
+      const hit = hit1 === -1 ? hit2 : (hit2 === -1 ? hit1 : Math.min(hit1, hit2));
+
+      if (hit === -1) break;
+      seqHits.push([hit, hit + strippedSequenceInput.length]);
+      start = hit + 1;
+    }
+    setSequenceHits(seqHits);
+
+    const row = Math.floor(seqHits[curSeqHitIndex][0] / rowWidth);
+    console.log("row", row);
+    rowVirtualizer.scrollToIndex(row + 1, { align: "center" });
+    setLastSearch(sequenceSearchInput);
+  }, [sequenceSearchInput, curSeqHitIndex,includeRC]);
+
+
   //console.log("virtualItems", virtualItems);
 
   if (!genbankData) {
@@ -377,6 +483,11 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
             setSearchPanelOpen={setSearchPanelOpen}
             searchType={searchType}
             setSearchType={setSearchType}
+            curSeqHitIndex={curSeqHitIndex}
+            setCurSeqHitIndex={setCurSeqHitIndex}
+            sequenceHits={sequenceHits}
+            includeRC={includeRC}
+            setIncludeRC={setIncludeRC}
           />
         </div>
       )}
@@ -459,6 +570,8 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
                           setWhereMouseWentUp={setWhereMouseWentUp}
                           whereMouseCurrentlyIs={whereMouseCurrentlyIs}
                           setWhereMouseCurrentlyIs={setWhereMouseCurrentlyIs}
+                          sequenceHits={sequenceHits}
+                          curSeqHitIndex={curSeqHitIndex}
                         />
                       </div>
                     );
