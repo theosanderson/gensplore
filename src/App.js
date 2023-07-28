@@ -116,14 +116,13 @@ function SearchPanel({
       {
         searchType === "sequence" && (
           <div className="my-2 text-gray-400 text-left px-3">
-            <input type="checkbox" value={includeRC} onChange={() => {
+            <label className="text-gray-900"> <input type="checkbox" value={includeRC} onChange={() => {
               
               setIncludeRC(!includeRC);
           setCurSeqHitIndex(0);
             }
             
-        }/>
-            <label className="ml-2 text-gray-900">Include reverse complement</label>
+        }/>&nbsp;Include reverse complement</label>
 
             {sequenceHits.length > 0 && (
               <>
