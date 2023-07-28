@@ -140,7 +140,7 @@ function SearchPanel({
           
               <button>
                 <BsArrowRightCircleFill onClick={() => setCurSeqHitIndex((x) => x==sequenceHits.length-1? 0: x+1)}
-                className="mx-3 text-gray-400" />
+                className="mx-3 text-gray-600" />
               </button>
               </>
             )}
