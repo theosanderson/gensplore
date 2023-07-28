@@ -204,7 +204,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
   // safely convert searchInput to int
   const intSearchInput = searchType === "nuc" ? parseInt(searchInput) : null;
   const annotSearchInput = searchType === "annot" ? searchInput : null;
-  const sequenceSearchInput = searchType === "sequence" ? searchInput.toUpperCase() : null;
+  const sequenceSearchInput = searchType === "sequence" && searchInput ? searchInput.toUpperCase() : null;
 
   const [whereOnPage, setWhereOnPage] = useState(0);
 
