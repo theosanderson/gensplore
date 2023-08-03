@@ -571,41 +571,21 @@ const SingleRow = ({
   });
 
   // create a tick specifically at searchInput
-  let searchTick = null;
+  let searchHighlight = null;
   if (
     intSearchInput != null &&
     intSearchInput >= rowStart &&
     intSearchInput <= rowEnd
   ) {
-    searchTick = (
-      <g key={-1}>
-        <line
-          x1={(intSearchInput - rowStart) * sep}
-          y1={0}
-          x2={(intSearchInput - rowStart) * sep}
-          y2={10}
-          stroke="red"
-        />
-        {
-          //rect behind tick
-        }
-        <rect
-          x={(intSearchInput - rowStart) * sep - 30}
-          y={0}
-          width={60}
-          height={30}
-          fill="#ffffee"
-        />
-        <text
-          x={(intSearchInput - rowStart) * sep}
-          y={20}
-          textAnchor="middle"
-          fontSize="10"
-          fill="red"
-        >
-          {intSearchInput + 1}
-        </text>
-      </g>
+    searchHighlight = (
+      <rect
+        x={(intSearchInput - rowStart) * sep - 0.5 * sep}
+        y={0}
+        width={sep}
+        height={height}
+        fill="#ff8888"
+        fillOpacity={0.5}
+      />
     );
   }
 
