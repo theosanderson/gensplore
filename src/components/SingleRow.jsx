@@ -1,7 +1,7 @@
 import ColorHash from "color-hash";
 import { getReverseComplement, filterFeatures, } from "../utils";
 import getColor from "../utils/getColor";
-import codonMapping from "../utils/codonMapping";
+import codonToAminoAcid from "../utils/codonMapping";
 var colorHash = new ColorHash({ lightness: [0.75, 0.9, 0.7, 0.8] });
 
 const SingleRow = ({
