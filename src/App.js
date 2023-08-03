@@ -10,7 +10,7 @@ import React, {
 import SingleRow from "./components/SingleRow";
 import SettingsPanel from "./components/SettingsPanel";
 import { Dialog } from "@headlessui/react";
-
+import "./App.css";
 import ClipLoader from "react-spinners/ClipLoader";
 import { genbankToJson } from "bio-parsers";
 import { useMeasure } from "react-use"; // or just 'react-use-measure'
