@@ -6,8 +6,9 @@ import React, {
   useLayoutEffect,
   useCallback,
 } from "react";
-import "rc-slider/assets/index.css";
-import "./App.css";
+...
+import SingleRow from "./components/SingleRow";
+import SettingsPanel from "./components/SettingsPanel";
 import { Dialog } from "@headlessui/react";
 
 import ClipLoader from "react-spinners/ClipLoader";
@@ -159,37 +160,6 @@ function SearchPanel({
   );
 }
 
-const ConfigPanel = ({ zoomLevel, setZoomLevel, configModalOpen, setConfigModalOpen }) => {
-  // zoom slider
-  return (
-    <>
-    <button className="inline-block mr-4 text-gray-400" onClick={() => setConfigModalOpen(true)}>
-      <MdSettings className="inline-block" />
-    </button>
-      <button
-        className="inline-block"
-        onClick={() => setZoomLevel((x) => x - 0.1)}
-      >
-        <AiOutlineZoomOut className="inline-block" />
-      </button>
-      <Slider
-        value={zoomLevel}
-        onChange={(x) => setZoomLevel(x)}
-        min={-9.5}
-        max={1}
-        step={0.001}
-        style={{ width: 150 }}
-        className="inline-block mx-3"
-      />
-      <button
-        className="inline-block"
-        onClick={() => setZoomLevel((x) => x + 0.1)}
-      >
-        <AiOutlineZoomIn className="inline-block" />
-      </button>
-    </>
-  );
-};
 
 function GensploreView({ genbankString, searchInput, setSearchInput }) {
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
@@ -545,7 +515,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
       )}
 
       <div className="fixed bottom-0 right-0 z-10 w-72 h-12 p-2 rounded shadow bg-white">
-        <ConfigPanel zoomLevel={zoomLevel} setZoomLevel={setZoomLevel} configModalOpen={configModalOpen} setConfigModalOpen={setConfigModalOpen} />
+        <SettingsPanel zoomLevel={zoomLevel} setZoomLevel={setZoomLevel} configModalOpen={configModalOpen} setConfigModalOpen={setConfigModalOpen} />
       </div>
 
       <div className="w-full">
