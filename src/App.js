@@ -357,7 +357,10 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
   const [configModalOpen, setConfigModalOpen] = useState(false);
 
   useEffect(() => {
-    if (!intSearchInput) return;
+    if (!intSearchInput) {
+      setSequenceHits([]);
+      return;
+    }
     const row = Math.floor(intSearchInput / rowWidth);
     if (intSearchInput === lastSearch) {
       return;
@@ -366,10 +369,15 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
     if (row > rowData.length) {
       return;
     }
-
+  
     rowVirtualizer.scrollToIndex(row + 1, { align: "center" });
-
+  
     setLastSearch(intSearchInput);
+  
+    // Create a new sequence hit for the searched nucleotide position
+    const sequenceHit = [intSearchInput - 1, intSearchInput];
+    setSequenceHits([sequenceHit]);
+    setCurSeqHitIndex(0);
   }, [intSearchInput, rowWidth]);
   useEffect(() => {
     if (!annotSearchInput) return;
