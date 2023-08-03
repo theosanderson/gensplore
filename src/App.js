@@ -28,7 +28,6 @@ import { useDebounce, useQueryState } from "./hooks";
 import "react-toastify/dist/ReactToastify.css";
 import Tooltip from "./components/Tooltip";
 import { getReverseComplement, filterFeatures } from "./utils";
-import SingleRow from "./components/SingleRow";
 
 
 
