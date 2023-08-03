@@ -581,7 +581,6 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
                           rowWidth={rowWidth}
                           setHoveredInfo={setHoveredInfo}
                           rowId={virtualitem.index}
-                          intSearchInput={intSearchInput - 1}
                           annotSearchInput={annotSearchInput}
                           renderProperly={true}
                           zoomLevel={zoomLevel}
