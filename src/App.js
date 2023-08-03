@@ -6,7 +6,7 @@ import React, {
   useLayoutEffect,
   useCallback,
 } from "react";
-...
+
 import SingleRow from "./components/SingleRow";
 import SettingsPanel from "./components/SettingsPanel";
 import { Dialog } from "@headlessui/react";
