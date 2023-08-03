@@ -161,7 +161,6 @@ const SingleRow = ({
   rowEnd,
   setHoveredInfo,
   rowId,
-  intSearchInput,
   annotSearchInput,
   zoomLevel,
   whereMouseWentDown,
@@ -572,41 +571,61 @@ const SingleRow = ({
 
   // create a tick specifically at searchInput
   let searchTick = null;
-  if (
-    intSearchInput != null &&
-    intSearchInput >= rowStart &&
-    intSearchInput <= rowEnd
-  ) {
-    searchTick = (
-      <g key={-1}>
-        <line
-          x1={(intSearchInput - rowStart) * sep}
-          y1={0}
-          x2={(intSearchInput - rowStart) * sep}
-          y2={10}
-          stroke="red"
-        />
-        {
-          //rect behind tick
-        }
-        <rect
-          x={(intSearchInput - rowStart) * sep - 30}
-          y={0}
-          width={60}
-          height={30}
-          fill="#ffffee"
-        />
-        <text
-          x={(intSearchInput - rowStart) * sep}
-          y={20}
-          textAnchor="middle"
-          fontSize="10"
-          fill="red"
-        >
-          {intSearchInput + 1}
-        </text>
-      </g>
-    );
+  if(sequenceHits.length > 0){
+    for(let i = 0; i < sequenceHits.length; i++){
+      const hit = sequenceHits[i];
+      let [start, end] = hit;
+      // if the hit is outside the current view, skip it
+      if(start > rowEnd || end < rowStart){
+        continue;
+      }
+      // if the hit is partially outside the current view, clip it
+      if(start < rowStart){
+        start = rowStart;
+      }
+      if(end > rowEnd){
+        end = rowEnd;
+      }
+      searchTick.push(
+        <g key={i}>
+          <line
+            x1={(start - rowStart) * sep}
+            y1={0}
+            x2={(end - rowStart) * sep}
+            y2={10}
+            stroke="red"
+          />
+          {
+            //rect behind tick
+          }
+          <rect
+            x={(start - rowStart) * sep - 30}
+            y={0}
+            width={(end - start) * sep + 60}
+            height={30}
+            fill="#ffffee"
+          />
+          <text
+            x={(start - rowStart) * sep}
+            y={20}
+            textAnchor="middle"
+            fontSize="10"
+            fill="red"
+          >
+            {start + 1}
+          </text>
+          <text
+            x={(end - rowStart) * sep}
+            y={20}
+            textAnchor="middle"
+            fontSize="10"
+            fill="red"
+          >
+            {end + 1}
+          </text>
+        </g>
+      );
+    }
   }
 
   let selectionRect = null;
@@ -633,36 +652,7 @@ const SingleRow = ({
     );
   }
 
-  let sequenceHitRects = null;
-
-  if(sequenceHits.length > 0){
-    sequenceHitRects = [];
-    for(let i = 0; i < sequenceHits.length; i++){
-      const hit = sequenceHits[i];
-      let [start, end] = hit;
-      // if the hit is outside the current view, skip it
-      if(start > rowEnd || end < rowStart){
-        continue;
-      }
-      // if the hit is partially outside the current view, clip it
-      if(start < rowStart){
-        start = rowStart;
-      }
-      if(end > rowEnd){
-        end = rowEnd;
-      }
-      sequenceHitRects.push(
-        <rect
-          x={extraPadding + (start - rowStart - 0.5) * sep}
-          y={0}
-          width={(end - start) * sep}
-          height={height}
-          fill={i==curSeqHitIndex? "#ff8888":"#ffbbbb"}
-          fillOpacity={0.5}
-        />
-      );
-    }
-  }
+  // No changes needed
 
             
 
