@@ -26,6 +26,8 @@ import { useDebounce, useQueryState } from "./hooks";
 import "react-toastify/dist/ReactToastify.css";
 import Tooltip from "./components/Tooltip";
 import { getReverseComplement, filterFeatures } from "./utils";
+// import github icon
+import { FaGithub } from "react-icons/fa";
 
 
 
@@ -745,9 +747,10 @@ const App = () => {
         >
           <div className="fixed bottom-5 text-center w-full">
             <a
-              className="text-gray-300 hover:text-gray-500"
+              className="text-gray-500 hover:text-gray-700 "
               href="https://github.com/theosanderson/gensplore"
             >
+              <FaGithub className="inline mr-1.5 mb-0.5" />
               View code on GitHub
             </a>
           </div>
