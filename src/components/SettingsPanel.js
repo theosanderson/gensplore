@@ -1,5 +1,6 @@
 import React from 'react';
 import Slider from 'rc-slider';
+import "rc-slider/assets/index.css";
 import { AiOutlineZoomIn, AiOutlineZoomOut } from 'react-icons/ai';
 import { MdSettings } from 'react-icons/md';
 

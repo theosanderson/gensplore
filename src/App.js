@@ -17,8 +17,6 @@ import { useMeasure } from "react-use"; // or just 'react-use-measure'
 import { FaSearch, FaTimes, FaZoo } from "react-icons/fa";
 import { DebounceInput } from "react-debounce-input";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
-import Slider, { Range } from "rc-slider";
-import { AiOutlineZoomIn, AiOutlineZoomOut } from "react-icons/ai";
 // settings icon
 import { MdSettings } from "react-icons/md";
 import { GiDna1 } from "react-icons/gi";
