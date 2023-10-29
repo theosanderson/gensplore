@@ -259,6 +259,13 @@ FEATURES             Location/Qualifiers
                      /translation="MKIILFLALITLATCELYHYQECVRGTTVLLKEPCSSGTYEGNS
                      PFHPLADNKFALTCFSTQFAFACPDGVKHVYQLRARSVSPKLFIRQEEVQELYSPIFL
                      IVAAIVFITLCFTLKRKTE"
+     CDS             27756..27887
+                     /gene="ORF7b"
+                     /locus_tag="GU280_gp08"
+                     /codon_start=1
+                     /product="ORF7b"
+                     /protein_id="YP_009725318.1"
+                     /db_xref="GeneID:43740574"
      gene            27894..28259
                      /gene="ORF8"
      CDS             27894..28259
