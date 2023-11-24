@@ -23,7 +23,7 @@ import SearchPanel from "../SearchPanel";
 import { GiDna1 } from "react-icons/gi";
 
 
-function GensploreView({ genbankString, searchInput, setSearchInput }) {
+function GensploreView({ genbankString, searchInput, setSearchInput, showLogo }) {
     const [searchPanelOpen, setSearchPanelOpen] = useState(false);
     const [zoomLevel, setRawZoomLevel] = useState(0);
     const [whereMouseWentDown, setWhereMouseWentDown] = useState(null);
@@ -419,6 +419,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
               {
                 // small logo on left, name and definition on right
               }
+              {showLogo && (
               <div className="flex flex-row">
                 <div className="flex flex-col">
                   <h3 className="text-xl mr-3 text-gray-700 ml-4 font-bold ">
@@ -429,6 +430,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
                   </h3>
                 </div>
               </div>
+              )}
               <div className="flex flex-col ml-4 mt-3 text-gray-900">
                 <h2 className="text-2xl">{genbankData.parsedSequence.name}</h2>
                 <div>

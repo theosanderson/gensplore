@@ -122,6 +122,7 @@ const App = () => {
           genbankString={genbankString}
           searchInput={searchInput}
           setSearchInput={setSearchInput}
+          showLogo={true}
         />
       )}
       {!ready && loading && (
