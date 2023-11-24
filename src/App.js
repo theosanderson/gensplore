@@ -467,9 +467,9 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
       Settings
       </Dialog.Title>
 
+      <AnnotationTogglePanel annotations={genbankData.parsedSequence.features} />
       <Dialog.Description
         className="text-base text-gray-600 mb-4"
-          <AnnotationTogglePanel annotations={genbankData.parsedSequence.features} />
       >
         Customize appearance
       </Dialog.Description>
@@ -493,8 +493,6 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
     </div>
   </Dialog.Panel>
 </Dialog>
-
-
     <div className="w-full p-5">
       <ToastContainer />
       {true && (
