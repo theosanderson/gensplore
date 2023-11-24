@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 const AnnotationTogglePanel = ({ annotations }) => {
   const [toggleState, setToggleState] = useState({});
 
   const handleToggle = (annotation) => {
-    setToggleState(prevState => ({
+    setToggleState((prevState) => ({
       ...prevState,
-      [annotation]: !prevState[annotation]
+      [annotation]: !prevState[annotation],
     }));
   };
 
   return (
     <div>
-      {annotations.map(annotation => (
+      {annotations.map((annotation) => (
         <div key={annotation}>
           <label>
             {annotation}
