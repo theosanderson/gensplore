@@ -561,7 +561,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
             }
             >
               
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
                 <input
                   type="checkbox"
                   className="focus:ring-indigo-500 text-indigo-600 border-gray-300 rounded mr-2"
@@ -578,10 +578,10 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
                 feature.notes?.product?.join(", ")
               }</td>
               
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{feature.type}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{feature.type}</td>
               <td>
               <button
-                className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-1 px-1 border border-gray-400 rounded shadow text-sm"
+                className="bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold py-1 px-1 border border-gray-400 rounded shadow text-sm "
                 onClick={() => {
                   setFeatureOffcanvasOpen(false);
                   setScrollToFeature(feature);
