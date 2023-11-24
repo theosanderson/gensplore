@@ -1,7 +1,18 @@
 {
   "name": "gensplore",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.0.0",
+  "description": "React component for displaying genbank files",
+  "keywords": [
+    "genbank",
+    "genomics",
+    "react"
+  ],
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theosanderson/gensplore",
+    "directory": "gensplore-component"
+  },
   "devDependencies": {
     "@headlessui/react": "^1.7.16",
     "@tanstack/react-virtual": "^3.0.0-beta.48",
