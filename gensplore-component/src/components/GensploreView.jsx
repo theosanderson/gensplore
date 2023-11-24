@@ -22,7 +22,6 @@ import { ToastContainer, toast } from "react-toastify";
 import SearchPanel from "../SearchPanel";
 import { GiDna1 } from "react-icons/gi";
 
-
 function GensploreView({ genbankString, searchInput, setSearchInput, showLogo }) {
     const [searchPanelOpen, setSearchPanelOpen] = useState(false);
     const [zoomLevel, setRawZoomLevel] = useState(0);
@@ -218,6 +217,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
     const [lastSearch, setLastSearch] = useState(null);
     const [enableRC, setEnableRC] = useState(false);
     const [configModalOpen, setConfigModalOpen] = useState(false);
+    const [scrollToFeature, setScrollToFeature] = useState(null);
   
     useEffect(() => {
       if (!intSearchInput) return;
@@ -234,6 +234,18 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
   
       setLastSearch(intSearchInput);
     }, [intSearchInput, rowWidth]);
+
+    useEffect(() => {
+      if (!scrollToFeature) return;
+      const row = Math.floor(scrollToFeature.start / rowWidth);
+      rowVirtualizer.scrollToIndex(row + 1, { align: "center" });
+
+      setScrollToFeature(null);
+    }, [scrollToFeature, rowWidth]);
+
+
+
+      
     useEffect(() => {
       if (!annotSearchInput) return;
       const strippedAnnotInput = annotSearchInput.replace(/\s/g, "");
@@ -527,7 +539,13 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
               Feature
             </th>
             <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Product
+            </th>
+            <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Type
+            </th>
+            <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+
             </th>
             
            
@@ -536,7 +554,12 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
         <tbody className="bg-white divide-y divide-gray-200">
             
           {genbankData?.parsedSequence.features.map((feature, index) => (
-            <tr key={index}>
+            
+            <tr key={index} className={
+              console.log("feature", feature)
+              
+            }
+            >
               
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 <input
@@ -551,7 +574,24 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
                     }
                 />
               {feature.name}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{
+                feature.notes?.product?.join(", ")
+              }</td>
+              
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{feature.type}</td>
+              <td>
+              <button
+                className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-1 px-1 border border-gray-400 rounded shadow text-sm"
+                onClick={() => {
+                  setFeatureOffcanvasOpen(false);
+                  setScrollToFeature(feature);
+                 
+                }}
+              >
+                Go to
+              </button>
+
+              </td>
              
               
             </tr>
