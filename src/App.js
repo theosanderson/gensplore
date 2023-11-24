@@ -131,7 +131,7 @@ function SearchPanel({
               <>
               <button>
                 <BsArrowLeftCircleFill onClick={() => setCurSeqHitIndex((x) => x==0? sequenceHits.length-1: x-1)}
-                className="mx-3 text-gray-600 hover:bg-black" />
+                className="mx-3 text-gray-600 hover:text-gray-800" />
               </button>
           
           
@@ -142,7 +142,7 @@ function SearchPanel({
           
               <button>
                 <BsArrowRightCircleFill onClick={() => setCurSeqHitIndex((x) => x==sequenceHits.length-1? 0: x+1)}
-                className="mx-3 text-gray-600  hover:bg-black" />
+                className="mx-3 text-gray-600  hover:text-gray-800" />
               </button>
               </>
             )}
