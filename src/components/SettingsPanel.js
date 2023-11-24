@@ -3,11 +3,15 @@ import Slider from 'rc-slider';
 import "rc-slider/assets/index.css";
 import { AiOutlineZoomIn, AiOutlineZoomOut } from 'react-icons/ai';
 import { MdSettings } from 'react-icons/md';
+import { PiTagChevronFill } from "react-icons/pi";
 
-const SettingsPanel = ({ zoomLevel, setZoomLevel, configModalOpen, setConfigModalOpen }) => {
+const SettingsPanel = ({ zoomLevel, setZoomLevel, configModalOpen, setConfigModalOpen, setFeatureOffcanvasOpen }) => {
   return (
     <>
-      <button className="inline-block mr-4 text-gray-400" onClick={() => setConfigModalOpen(true)}>
+    <button className="inline-block mr-4 text-gray-400 hover:text-gray-600" onClick={() => setFeatureOffcanvasOpen(true)}>
+        <PiTagChevronFill className="inline-block" />
+      </button>
+      <button className="inline-block mr-4 text-gray-400  hover:text-gray-600" onClick={() => setConfigModalOpen(true)}>
         <MdSettings className="inline-block" />
       </button>
       <button
