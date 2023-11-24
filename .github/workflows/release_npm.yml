@@ -21,7 +21,7 @@ jobs:
 
       - name: Update package version and release
         run: |
-          cd taxonium_component
+          cd gensplore-component
           TAG_NAME=${GITHUB_REF#refs/tags/}
           echo "Current tag is $TAG_NAME"
           jq ".version = \"$TAG_NAME\"" package.json > package.json.tmp && mv package.json.tmp package.json
