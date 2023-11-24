@@ -3,7 +3,7 @@ import React, {
     useEffect,
   } from "react";
 
-import { FaSearch, FaTimes, FaZoo } from "react-icons/fa";
+import { FaSearch, FaTimes } from "react-icons/fa";
 import { DebounceInput } from "react-debounce-input";
 
 // settings icon
