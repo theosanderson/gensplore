@@ -7,6 +7,9 @@ import React, {
     useCallback,
   } from "react";
   
+
+import Offcanvas from './Offcanvas'; // Import the new offcanvas component
+
 import Tooltip from "./Tooltip";
 import { getReverseComplement, filterFeatures } from "../utils";
 import SingleRow from "./SingleRow";
@@ -18,7 +21,7 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { ToastContainer, toast } from "react-toastify";
 import SearchPanel from "../SearchPanel";
 import { GiDna1 } from "react-icons/gi";
-import { MdSettings } from "react-icons/md";
+
 
 function GensploreView({ genbankString, searchInput, setSearchInput }) {
     const [searchPanelOpen, setSearchPanelOpen] = useState(false);
@@ -292,6 +295,37 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
       setLastSearch(sequenceSearchInput);
     }, [sequenceSearchInput, curSeqHitIndex,includeRC]);
   
+    const [featureOffcanvasOpen, setFeatureOffcanvasOpen] = useState(false);
+    const [featureVisibility, setFeatureVisibility] = useState({});
+    const visibleFeatures = useMemo(() => {
+        if (!genbankData) return [];
+        const visibleFeatures = [];
+        genbankData.parsedSequence.features.forEach((feature, i) => {
+            if (featureVisibility[i]) {
+                visibleFeatures.push(feature);
+            }
+        });
+        return visibleFeatures;
+    }, [featureVisibility, genbankData]);
+
+
+
+  useEffect(() => {
+    if (!genbankData) return;
+    const newFeatureVisibility = {};
+    /*
+       feature.type !== "source" &&
+      feature.type !== "gene" &&
+      feature.type !== "mRNA" &&
+      */
+    genbankData.parsedSequence.features.forEach((feature, i) => {
+        newFeatureVisibility[i] = feature.type !== "source" && feature.type !== "gene" && feature.type !== "mRNA"
+    }
+    );
+    setFeatureVisibility(newFeatureVisibility);
+    }, [genbankData]);
+
+  
   
     //console.log("virtualItems", virtualItems);
   
@@ -374,7 +408,8 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
         )}
   
         <div className="fixed bottom-0 right-0 z-10 w-72 h-12 p-2 rounded shadow bg-white">
-          <SettingsPanel zoomLevel={zoomLevel} setZoomLevel={setZoomLevel} configModalOpen={configModalOpen} setConfigModalOpen={setConfigModalOpen} />
+          <SettingsPanel zoomLevel={zoomLevel} setZoomLevel={setZoomLevel} configModalOpen={configModalOpen} setConfigModalOpen={setConfigModalOpen}
+          setFeatureOffcanvasOpen={setFeatureOffcanvasOpen} />
         </div>
   
         <div className="w-full">
@@ -436,6 +471,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
                           <SingleRow
                             key={virtualitem.index}
                             parsedSequence={genbankData.parsedSequence}
+                            visibleFeatures={visibleFeatures}
                             rowStart={row.rowStart}
                             rowEnd={row.rowEnd}
                             rowWidth={rowWidth}
@@ -465,6 +501,50 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
           )}
         </div>
       </div>
+
+   
+
+    <Offcanvas isOpen={featureOffcanvasOpen} onClose={() => setFeatureOffcanvasOpen(false)}>
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead>
+          <tr>
+         
+            <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Feature
+            </th>
+            <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Type
+            </th>
+            
+           
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+            
+          {genbankData?.parsedSequence.features.map((feature, index) => (
+            <tr key={index}>
+              
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <input
+                  type="checkbox"
+                  className="focus:ring-indigo-500 text-indigo-600 border-gray-300 rounded mr-2"
+                  checked={!!featureVisibility[index]}
+                  onChange={() => {
+                    const newFeatureVisibility = { ...featureVisibility };
+                    newFeatureVisibility[index] = !newFeatureVisibility[index];
+                    setFeatureVisibility(newFeatureVisibility);
+                  }
+                    }
+                />
+              {feature.name}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{feature.type}</td>
+             
+              
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Offcanvas>
       </>
     );
   }

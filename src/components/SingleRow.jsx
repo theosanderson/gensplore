@@ -21,7 +21,8 @@ const SingleRow = ({
   setWhereMouseCurrentlyIs,
   sequenceHits,
   curSeqHitIndex,
-  enableRC
+  enableRC,
+  visibleFeatures
 }) => {
   const zoomFactor = 2 ** zoomLevel;
   const sep = 10 * zoomFactor;
@@ -29,12 +30,8 @@ const SingleRow = ({
   const fullSequence = parsedSequence.sequence;
   const rowSequence = fullSequence.slice(rowStart, rowEnd);
 
-  const relevantFeatures = parsedSequence.features.filter(
-    (feature) =>
-      feature.type !== "source" &&
-      feature.type !== "gene" &&
-      feature.type !== "mRNA" &&
-      ((feature.start >= rowStart && feature.start <= rowEnd) ||
+  const relevantFeatures = visibleFeatures.filter(
+    (feature) => ((feature.start >= rowStart && feature.start <= rowEnd) ||
         (feature.end >= rowStart && feature.end <= rowEnd) ||
         (feature.start <= rowStart && feature.end >= rowEnd))
   );
