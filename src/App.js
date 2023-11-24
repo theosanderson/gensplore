@@ -745,7 +745,7 @@ const App = () => {
             loadFromFile(e.dataTransfer.files[0]);
           }}
         >
-          <div className="fixed bottom-5 text-center w-full">
+          <div className="fixed bottom-5 text-center w-full bg-white">
             <a
               className="text-gray-500 hover:text-gray-700 "
               href="https://github.com/theosanderson/gensplore"
