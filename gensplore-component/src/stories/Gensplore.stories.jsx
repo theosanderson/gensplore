@@ -4,10 +4,7 @@ import GensploreComponent from '../components/GensploreView';
 // This default export determines where your story goes in the story list
 export default {
   title: 'GensploreComponent',
-  component: GensploreComponent,
-  genbankString: `
-  
-  `
+  component: GensploreComponent
 };
 
 const Template = (args) => <GensploreComponent genbankString={
