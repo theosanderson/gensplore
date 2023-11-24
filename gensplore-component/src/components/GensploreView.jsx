@@ -431,6 +431,18 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
                 </div>
               </div>
               )}
+              {!showLogo && (
+                <div className="fixed bottom-1 left-1 z-10 px-2 py-2 text-xs rounded shadow bg-white text-gray-700">
+                  <a href="//gensplore.genomium.org">
+                    <GiDna1 className="inline" />
+                    Gensplore
+                  </a>
+                </div>
+              )
+
+                
+              }
+            
               <div className="flex flex-col ml-4 mt-3 text-gray-900">
                 <h2 className="text-2xl">{genbankData.parsedSequence.name}</h2>
                 <div>
