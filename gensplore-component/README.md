@@ -3,14 +3,14 @@ A react component to embed Gensplore in your own website.
 ## Installation
 
 ```
-npm install gensplore-component
+npm install gensplore
 ```
 
 ## Usage
 
 ```jsx
 import React from 'react';
-import Gensplore from 'gensplore-component';
+import Gensplore from 'gensplore';
 
 const genbankString = `LOCUS       Sample100bp       100 bp    DNA     linear   UNK 24-NOV-2023
 DEFINITION  Synthetic construct, 100 bp DNA fragment with 42 bp coding sequence.
