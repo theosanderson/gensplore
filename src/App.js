@@ -9,6 +9,7 @@ import React, {
 
 import SingleRow from "./components/SingleRow";
 import SettingsPanel from "./components/SettingsPanel";
+import AnnotationTogglePanel from "./components/AnnotationTogglePanel";
 import { Dialog } from "@headlessui/react";
 import "./App.css";
 import ClipLoader from "react-spinners/ClipLoader";
@@ -468,6 +469,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
 
       <Dialog.Description
         className="text-base text-gray-600 mb-4"
+          <AnnotationTogglePanel annotations={genbankData.parsedSequence.features} />
       >
         Customize appearance
       </Dialog.Description>
@@ -746,6 +748,7 @@ const App = () => {
           }}
         >
           <div className="fixed bottom-5 text-center w-full bg-white">
+  const [annotationToggles, setAnnotationToggles] = useState({});
             <a
               className="text-gray-500 hover:text-gray-700 "
               href="https://github.com/theosanderson/gensplore"
