@@ -1,8 +1,8 @@
 {
-  "name": "genbank_view",
+  "name": "gensplore",
   "version": "0.1.0",
   "private": true,
-  "dependencies": {
+  "devDependencies": {
     "@headlessui/react": "^1.7.16",
     "@tanstack/react-virtual": "^3.0.0-beta.48",
     "@testing-library/jest-dom": "^5.16.5",
@@ -15,9 +15,7 @@
     "postcss": "^8.4.21",
     "qs": "^6.11.0",
     "rc-slider": "^10.1.1",
-    "react": "^18.2.0",
     "react-debounce-input": "^3.3.0",
-    "react-dom": "^18.2.0",
     "react-icons": "^4.7.1",
     "react-router-dom": "^6.8.1",
     "react-spinners": "^0.13.8",
@@ -28,8 +26,17 @@
     "ve-range-utils": "^2.6.6",
     "ve-sequence-utils": "^5.2.9",
     "vite": "^5.0.2",
+    "vite-plugin-css-injected-by-js": "^3.3.0",
     "web-vitals": "^2.1.4"
   },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "main": "dist/gensplore.umd.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "start": "vite",
     "build": "vite build",

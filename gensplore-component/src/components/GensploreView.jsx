@@ -7,7 +7,7 @@ import React, {
     useCallback,
   } from "react";
   
-
+import "../App.css"
 import Offcanvas from './Offcanvas'; // Import the new offcanvas component
 
 import Tooltip from "./Tooltip";
