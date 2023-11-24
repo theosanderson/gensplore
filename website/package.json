@@ -34,7 +34,7 @@
   "scripts": {
     "start": "vite",
     "build": "vite build",
-    "preinstall": "cd ../taxonium_component && yarn install && yarn build",
+    "preinstall": "cd ../gensplore-component && yarn install && yarn build",
     "serve": "vite preview"
   },
   "eslintConfig": {
