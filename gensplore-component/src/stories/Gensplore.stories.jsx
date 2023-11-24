@@ -25,10 +25,14 @@ FEATURES             Location/Qualifiers
                      /organism="synthetic construct"
                      /mol_type="genomic DNA"
                      /db_xref="taxon:000000"
+     CDS             1..15
+                     /codon_start=1
+                     /product="mini protein 1"
+                     /protein_id="AAA00000.2"
      CDS             30..71
                      /codon_start=1
-                     /product="mini protein"
-                     /protein_id="AAA00000.1"
+                     /product="mini protein 2"
+                     /protein_id="AAA00000.2"
 ORIGIN      
         1 atgctagcta cgtagctatg ctagctagct agctagctag ctgatgaaaa aaaaaa
        61 atatattata actgactgac tgactgactg actgactgac
