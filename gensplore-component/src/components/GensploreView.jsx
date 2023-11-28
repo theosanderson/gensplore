@@ -555,10 +555,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
             
           {genbankData?.parsedSequence.features.map((feature, index) => (
             
-            <tr key={index} className={
-              console.log("feature", feature)
-              
-            }
+            <tr key={index} 
             >
               
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
