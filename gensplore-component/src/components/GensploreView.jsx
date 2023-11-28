@@ -529,7 +529,8 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
       </div>
 
    
-
+{
+  isOpen &&
     <Offcanvas isOpen={featureOffcanvasOpen} onClose={() => setFeatureOffcanvasOpen(false)}>
       <table className="min-w-full divide-y divide-gray-200">
         <thead>
@@ -596,6 +597,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
         </tbody>
       </table>
     </Offcanvas>
+}
       </>
     );
   }
