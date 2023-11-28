@@ -13,3 +13,4 @@ For viewing a custom genome every now and then, just use the "Choose file" optio
 ### React component
 
 There is now a React component for embedding Gensplore in your own website. See [here](gensplore-component/README.md) for details.
+
