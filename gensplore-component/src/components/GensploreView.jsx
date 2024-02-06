@@ -304,6 +304,9 @@ if (hit1 === -1) {
         start = hit + 1;
       }
       setSequenceHits(seqHits);
+     if(seqHits.length==0){
+         return
+     }
   
       const row = Math.floor(seqHits[curSeqHitIndex][0] / rowWidth);
       console.log("row", row);
