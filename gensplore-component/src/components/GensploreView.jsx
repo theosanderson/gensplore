@@ -304,6 +304,7 @@ if (hit1 === -1) {
         start = hit + 1;
       }
       setSequenceHits(seqHits);
+    console.log("length",seqHits.length)
      if(seqHits.length==0){
          return
      }
