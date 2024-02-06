@@ -277,14 +277,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
         return;
       }
       console.log("strippedSequenceInput", strippedSequenceInput);
-      const matchingSequence = fullSequence.indexOf(strippedSequenceInput);
       
-      if(matchingSequence === -1) {
-        //toast.error("No matching sequence found");
-        setSequenceHits([]);
-  
-        return;
-      }
       // we want to find all locations that match and store them with setSequenceHits as [start,end]
       const seqHits = [];
       let start = 0;
@@ -293,7 +286,18 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
       while (true) {
         const hit1 = fullSequence.indexOf(strippedSequenceInput, start);
         const hit2 = includeRC ? fullSequence.indexOf(rc, start) : -1;
-        const hit = hit1 === -1 ? hit2 : (hit2 === -1 ? hit1 : Math.min(hit1, hit2));
+        let hit;
+
+if (hit1 === -1) {
+    // If hit1 is -1, use hit2 (regardless of what hit2 is)
+    hit = hit2;
+} else if (hit2 === -1) {
+    // If hit1 is not -1 but hit2 is, use hit1
+    hit = hit1;
+} else {
+    // If neither hit1 nor hit2 is -1, take the smaller of the two
+    hit = Math.min(hit1, hit2);
+}
   
         if (hit === -1) break;
         seqHits.push([hit, hit + strippedSequenceInput.length]);
