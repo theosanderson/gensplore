@@ -6,7 +6,7 @@ import React, {
     useLayoutEffect,
     useCallback,
   } from "react";
-import { FaRegClipboard } from "react-icons/fa";
+import { FaRegClipboard, FaCopy } from "react-icons/fa";
 import "../App.css"
 import Offcanvas from './Offcanvas';
 import ContextMenu from './ContextMenu';
