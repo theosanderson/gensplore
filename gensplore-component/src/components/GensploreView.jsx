@@ -347,7 +347,7 @@ if (hit1 === -1) {
     };
 
     const copySelectedSequence = (asReverseComplement = false) => {
-      if (!whereMouseWentDown || !whereMouseWentUp) return;
+      if (whereMouseWentDown===null || whereMouseWentUp===null) return;
       
       const selStart = Math.min(whereMouseWentDown, whereMouseWentUp);
       const selEnd = Math.max(whereMouseWentDown, whereMouseWentUp);
