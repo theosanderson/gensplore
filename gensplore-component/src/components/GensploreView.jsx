@@ -6,7 +6,7 @@ import React, {
     useLayoutEffect,
     useCallback,
   } from "react";
-  
+import { GiDna1 } from "react-icons/gi";
 import "../App.css"
 import Offcanvas from './Offcanvas';
 import ContextMenu from './ContextMenu';
@@ -491,7 +491,7 @@ if (hit1 === -1) {
                           className="ml-2 p-1 hover:bg-gray-200 rounded-full"
                           title="Copy selection"
                         >
-                          <i className="fas fa-copy text-gray-500 text-sm"></i>
+                          <GiDna1 className="h-4 w-4 text-gray-500" />
                         </button>
                       </span>
                     </div>
