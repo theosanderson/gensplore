@@ -487,11 +487,11 @@ if (hit1 === -1) {
                       <span className="font-mono text-gray-700 flex items-center">
                         {Math.abs((whereMouseWentUp || whereMouseCurrentlyIs) - whereMouseWentDown)} bp
                         <button 
-                          onClick={() => copySelectedSequence(false)}
+                          onClick={() => navigator.clipboard.writeText(Math.abs((whereMouseWentUp || whereMouseCurrentlyIs) - whereMouseWentDown))}
                           className="ml-2 p-1 hover:bg-gray-200 rounded-full"
-                          title="Copy selection"
+                          title="Copy length"
                         >
-                          <FaRegClipboard className="h-4 w-4 text-gray-500" />
+                          <FaCopy className="h-4 w-4 text-gray-500" />
                         </button>
                       </span>
                     </div>
