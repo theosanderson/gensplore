@@ -8,7 +8,8 @@ import React, {
   } from "react";
   
 import "../App.css"
-import Offcanvas from './Offcanvas'; // Import the new offcanvas component
+import Offcanvas from './Offcanvas';
+import ContextMenu from './ContextMenu';
 
 import Tooltip from "./Tooltip";
 import { getReverseComplement, filterFeatures } from "../utils";
@@ -33,6 +34,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
     const [ref, { width }] = useMeasure();
   
     const [hoveredInfo, setHoveredInfo] = useState(null);
+    const [contextMenu, setContextMenu] = useState({ x: null, y: null });
     const [genbankData, setGenbankData] = useState(null);
     const [sequenceHits, setSequenceHits] = useState([]);
     const [curSeqHitIndex, setCurSeqHitIndex] = useState(0);
@@ -361,7 +363,46 @@ if (hit1 === -1) {
       );
     }
   
+    // Handle context menu
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+      if (whereMouseWentDown !== null && whereMouseWentUp !== null) {
+        setContextMenu({ x: e.clientX, y: e.clientY });
+      }
+    };
+
+    const handleCloseContextMenu = () => {
+      setContextMenu({ x: null, y: null });
+    };
+
+    const handleCopySelection = () => {
+      const selStart = Math.min(whereMouseWentDown, whereMouseWentUp);
+      const selEnd = Math.max(whereMouseWentDown, whereMouseWentUp);
+      const selectedText = genbankData.parsedSequence.sequence.substring(selStart, selEnd);
+      navigator.clipboard.writeText(selectedText);
+      toast.success('Copied to clipboard');
+      handleCloseContextMenu();
+    };
+
+    const handleCopyRC = () => {
+      const selStart = Math.min(whereMouseWentDown, whereMouseWentUp);
+      const selEnd = Math.max(whereMouseWentDown, whereMouseWentUp);
+      const selectedText = genbankData.parsedSequence.sequence.substring(selStart, selEnd);
+      const rc = getReverseComplement(selectedText);
+      navigator.clipboard.writeText(rc);
+      toast.success('Copied reverse complement to clipboard');
+      handleCloseContextMenu();
+    };
+
+    useEffect(() => {
+      document.addEventListener('click', handleCloseContextMenu);
+      return () => {
+        document.removeEventListener('click', handleCloseContextMenu);
+      };
+    }, []);
+
     return (<>
+      <div onContextMenu={handleContextMenu}>
     <Dialog
     open={configModalOpen}
     onClose={() => setConfigModalOpen(false)}
@@ -536,6 +577,15 @@ if (hit1 === -1) {
         </div>
       </div>
 
+      {contextMenu.x !== null && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={handleCloseContextMenu}
+          onCopy={handleCopySelection}
+          onCopyRC={handleCopyRC}
+        />
+      )}
    
 {
   featureOffcanvasOpen &&
