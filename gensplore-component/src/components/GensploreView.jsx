@@ -6,7 +6,7 @@ import React, {
     useLayoutEffect,
     useCallback,
   } from "react";
-  
+import { FaRegClipboard, FaRegCopy } from "react-icons/fa";
 import "../App.css"
 import Offcanvas from './Offcanvas';
 import ContextMenu from './ContextMenu';
@@ -21,9 +21,8 @@ import { useMeasure } from "react-use"; // or just 'react-use-measure'
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { ToastContainer, toast } from "react-toastify";
 import SearchPanel from "../SearchPanel";
-import { GiDna1 } from "react-icons/gi";
 
-function GensploreView({ genbankString, searchInput, setSearchInput, showLogo }) {
+function GensploreView({ genbankString, searchInput, setSearchInput }) {
     const [searchPanelOpen, setSearchPanelOpen] = useState(false);
     const [zoomLevel, setRawZoomLevel] = useState(0);
     const [whereMouseWentDown, setWhereMouseWentDown] = useState(null);
@@ -474,29 +473,31 @@ if (hit1 === -1) {
               {
                 // small logo on left, name and definition on right
               }
-              {showLogo && (
-              <div className="flex flex-row">
-                <div className="flex flex-col">
-                  <h3 className="text-xl mr-3 text-gray-700 ml-4 font-bold ">
-                    <a href="/">
-                      <GiDna1 className="inline" />
-                      Gensplore
-                    </a>
-                  </h3>
+              {whereMouseWentDown !== null && (whereMouseWentUp !== null || whereMouseCurrentlyIs !== null) && (
+                <div className="fixed bottom-1 left-1 z-10 px-3 py-2 text-sm rounded-lg shadow-lg bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200">
+                  <div className="flex flex-col ">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-medium text-gray-700">Selection:</span>
+                      <span className="font-mono text-gray-700">
+                        {Math.min(whereMouseWentDown, whereMouseWentUp || whereMouseCurrentlyIs)+1} - {Math.max(whereMouseWentDown, whereMouseWentUp || whereMouseCurrentlyIs)}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-medium text-gray-700">Length:</span>
+                      <span className="font-mono text-gray-700 flex items-center">
+                        {Math.abs((whereMouseWentUp || whereMouseCurrentlyIs) - whereMouseWentDown)} bp
+                        <button 
+                          onClick={() => navigator.clipboard.writeText(Math.abs((whereMouseWentUp || whereMouseCurrentlyIs) - whereMouseWentDown))}
+                          className="ml-2 p-1 hover:bg-gray-200 rounded-full"
+                          title="Copy length"
+                        >
+                          <FaRegCopy className="h-4 w-4 text-gray-500" />
+                        </button>
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
               )}
-              {!showLogo && (
-                <div className="fixed bottom-1 left-1 z-10 px-2 py-2 text-xs rounded shadow bg-white text-gray-700">
-                  <a href="//gensplore.genomium.org">
-                    <GiDna1 className="inline" />
-                    Gensplore
-                  </a>
-                </div>
-              )
-
-                
-              }
             
               <div className="flex flex-col ml-4 mt-3 text-gray-900">
                 <h2 className="text-2xl">{genbankData.parsedSequence.name}</h2>
