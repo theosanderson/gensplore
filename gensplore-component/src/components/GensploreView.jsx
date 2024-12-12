@@ -493,10 +493,15 @@ if (hit1 === -1) {
                     Gensplore
                   </a>
                 </div>
-              )
+              )}
 
-                
-              }
+              {whereMouseWentDown !== null && whereMouseWentUp !== null && (
+                <div className="fixed bottom-12 left-1 z-10 px-2 py-2 text-xs rounded shadow bg-white text-gray-700">
+                  Selection: {Math.min(whereMouseWentDown, whereMouseWentUp)} - {Math.max(whereMouseWentDown, whereMouseWentUp)}
+                  <br/>
+                  Length: {Math.abs(whereMouseWentUp - whereMouseWentDown)}
+                </div>
+              )}
             
               <div className="flex flex-col ml-4 mt-3 text-gray-900">
                 <h2 className="text-2xl">{genbankData.parsedSequence.name}</h2>
