@@ -321,6 +321,11 @@ const SingleRow = ({
             width={(block.end - block.start) * sep + extraFeat * 2}
             height={10}
             fill={getColor(feature, product)}
+            onClick={() => {
+              alert(`Feature: ${feature.name}\nType: ${feature.type}${product ? '\nProduct: ' + product : ''}${
+                feature.notes && feature.notes.locus_tag ? '\nLocus Tag: ' + feature.notes.locus_tag : ''
+              }`);
+            }}
             onMouseEnter={() => {
               if (zoomLevel < codonZoomThreshold)
                 setHoveredInfo({
@@ -335,6 +340,7 @@ const SingleRow = ({
             onMouseLeave={() => {
               if (zoomLevel < codonZoomThreshold) setHoveredInfo(null);
             }}
+            style={{cursor: 'pointer'}}
           />
         ))}
 
