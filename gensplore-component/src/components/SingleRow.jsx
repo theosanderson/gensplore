@@ -325,6 +325,7 @@ const SingleRow = ({
               alert(`Feature: ${feature.name}\nType: ${feature.type}${product ? '\nProduct: ' + product : ''}${
                 feature.notes && feature.notes.locus_tag ? '\nLocus Tag: ' + feature.notes.locus_tag : ''
               }`);
+              console.log(feature);
             }}
             onMouseEnter={() => {
               if (zoomLevel < codonZoomThreshold)
