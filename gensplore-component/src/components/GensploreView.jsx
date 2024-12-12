@@ -579,9 +579,8 @@ if (hit1 === -1) {
         />
       )}
    
-{
-  featureOffcanvasOpen &&
-    <Offcanvas isOpen={featureOffcanvasOpen} onClose={() => setFeatureOffcanvasOpen(false)}>
+      {featureOffcanvasOpen && (
+        <Offcanvas isOpen={featureOffcanvasOpen} onClose={() => setFeatureOffcanvasOpen(false)}>
       <table className="min-w-full divide-y divide-gray-200">
         <thead>
           <tr>
@@ -646,10 +645,11 @@ if (hit1 === -1) {
           ))}
         </tbody>
       </table>
-    </Offcanvas>
+        </Offcanvas>
+      )}
+      </div>
+    </>
+  );
 }
-      </>
-    );
-  }
 
-    export default GensploreView;
+export default GensploreView;
