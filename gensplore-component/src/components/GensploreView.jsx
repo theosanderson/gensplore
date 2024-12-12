@@ -6,7 +6,6 @@ import React, {
     useLayoutEffect,
     useCallback,
   } from "react";
-import { ClipboardIcon } from '@heroicons/react/24/outline';
   
 import "../App.css"
 import Offcanvas from './Offcanvas';
@@ -492,7 +491,7 @@ if (hit1 === -1) {
                           className="ml-2 p-1 hover:bg-gray-200 rounded-full"
                           title="Copy selection"
                         >
-                          <ClipboardIcon className="h-4 w-4 text-gray-500" />
+                          <i className="fas fa-copy text-gray-500 text-sm"></i>
                         </button>
                       </span>
                     </div>
