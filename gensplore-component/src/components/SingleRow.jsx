@@ -2,6 +2,7 @@ import ColorHash from "color-hash";
 import { getReverseComplement, filterFeatures, } from "../utils";
 import getColor from "../utils/getColor";
 import codonToAminoAcid from "../utils/codonMapping";
+import { toast } from "react-toastify";
 var colorHash = new ColorHash({ lightness: [0.75, 0.9, 0.7, 0.8] });
 
 const SingleRow = ({
@@ -322,9 +323,18 @@ const SingleRow = ({
             height={10}
             fill={getColor(feature, product)}
             onClick={() => {
-              alert(`Feature: ${feature.name}\nType: ${feature.type}${product ? '\nProduct: ' + product : ''}${
-                feature.notes && feature.notes.locus_tag ? '\nLocus Tag: ' + feature.notes.locus_tag : ''
-              }`);
+              
+
+              const minLoc = feature.locations.map((loc) => Math.min(loc.start, loc.end)).reduce((a, b) => Math.min(a, b));
+              const maxLoc = feature.locations.map((loc) => Math.max(loc.start, loc.end)).reduce((a, b) => Math.max(a, b));
+              setWhereMouseWentDown(minLoc);
+              setWhereMouseWentUp(maxLoc+1);
+              if (feature.locations.length > 1) {
+                toast.info(
+                  `This feature has multiple locations. The selection will be from the start of the first location to the end of the last location.`
+                );
+              }
+
               console.log(feature);
             }}
             onMouseEnter={() => {
