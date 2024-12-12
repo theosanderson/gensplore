@@ -6,7 +6,7 @@ import React, {
     useLayoutEffect,
     useCallback,
   } from "react";
-import { FaRegClipboard, FaCopy } from "react-icons/fa";
+import { FaRegClipboard, FaRegCopy } from "react-icons/fa";
 import "../App.css"
 import Offcanvas from './Offcanvas';
 import ContextMenu from './ContextMenu';
@@ -491,7 +491,7 @@ if (hit1 === -1) {
                           className="ml-2 p-1 hover:bg-gray-200 rounded-full"
                           title="Copy length"
                         >
-                          <FaCopy className="h-4 w-4 text-gray-500" />
+                          <FaRegCopy className="h-4 w-4 text-gray-500" />
                         </button>
                       </span>
                     </div>
