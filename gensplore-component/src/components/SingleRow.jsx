@@ -289,6 +289,19 @@ const SingleRow = ({
 
   const codonZoomThreshold = -2;
 
+  const handleFeatureClick = (feature) => {
+    const minLoc = feature.locations.map((loc) => Math.min(loc.start, loc.end)).reduce((a, b) => Math.min(a, b));
+    const maxLoc = feature.locations.map((loc) => Math.max(loc.start, loc.end)).reduce((a, b) => Math.max(a, b));
+    setWhereMouseWentDown(minLoc);
+    setWhereMouseWentUp(maxLoc+1);
+    if (feature.locations.length > 1) {
+      toast.info(
+        `This feature has multiple locations. The selection will be from the start of the first location to the end of the last location.`
+      );
+    }
+    console.log(feature);
+  };
+
   const featureBlocksSVG = featureBlocks.map((feature, i) => {
     const x = feature.start * sep;
 
@@ -322,21 +335,7 @@ const SingleRow = ({
             width={(block.end - block.start) * sep + extraFeat * 2}
             height={10}
             fill={getColor(feature, product)}
-            onClick={() => {
-              
-
-              const minLoc = feature.locations.map((loc) => Math.min(loc.start, loc.end)).reduce((a, b) => Math.min(a, b));
-              const maxLoc = feature.locations.map((loc) => Math.max(loc.start, loc.end)).reduce((a, b) => Math.max(a, b));
-              setWhereMouseWentDown(minLoc);
-              setWhereMouseWentUp(maxLoc+1);
-              if (feature.locations.length > 1) {
-                toast.info(
-                  `This feature has multiple locations. The selection will be from the start of the first location to the end of the last location.`
-                );
-              }
-
-              console.log(feature);
-            }}
+            onClick={() => handleFeatureClick(feature)}
             onMouseEnter={() => {
               if (zoomLevel < codonZoomThreshold)
                 setHoveredInfo({
@@ -368,6 +367,7 @@ const SingleRow = ({
                   y={y + 9}
                   textAnchor="middle"
                   fontSize="10"
+                  onClick={() => handleFeatureClick(feature)}
                   onMouseOver={() =>
                     setHoveredInfo({
                       label: `${betterName}: ${codon.aminoAcid}${
