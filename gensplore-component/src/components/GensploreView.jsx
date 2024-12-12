@@ -475,9 +475,9 @@ if (hit1 === -1) {
               }
               {whereMouseWentDown !== null && (whereMouseWentUp !== null || whereMouseCurrentlyIs !== null) && (
                 <div className="fixed bottom-1 left-1 z-10 px-3 py-2 text-sm rounded-lg shadow-lg bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200">
-                  <div className="flex flex-col space-y-0.5">
+                  <div className="flex flex-col ">
                     <div className="flex items-center space-x-2">
-                      <span className="font-medium text-gray-700">Position:</span>
+                      <span className="font-medium text-gray-700">Selection:</span>
                       <span className="font-mono text-gray-700">
                         {Math.min(whereMouseWentDown, whereMouseWentUp || whereMouseCurrentlyIs)+1} - {Math.max(whereMouseWentDown, whereMouseWentUp || whereMouseCurrentlyIs)}
                       </span>
