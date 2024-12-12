@@ -334,21 +334,6 @@ if (hit1 === -1) {
     }, [genbankData]);
 
   
-  
-    //console.log("virtualItems", virtualItems);
-  
-    if (!genbankData) {
-      return <div>Loading...</div>;
-    }
-  
-    if (!width) {
-      return (
-        <div className="w-full h-full p-5">
-          <div ref={ref} className="w-full h-full" />
-        </div>
-      );
-    }
-  
     // Handle context menu
     const handleContextMenu = (e) => {
       e.preventDefault();
@@ -392,6 +377,23 @@ if (hit1 === -1) {
         document.removeEventListener('click', handleCloseContextMenu);
       };
     }, []);
+
+
+  
+    //console.log("virtualItems", virtualItems);
+  
+    if (!genbankData) {
+      return <div>Loading...</div>;
+    }
+  
+    if (!width) {
+      return (
+        <div className="w-full h-full p-5">
+          <div ref={ref} className="w-full h-full" />
+        </div>
+      );
+    }
+  
 
     return (<>
       <div onContextMenu={handleContextMenu}>
