@@ -8,7 +8,8 @@ import React, {
   } from "react";
   
 import "../App.css"
-import Offcanvas from './Offcanvas'; // Import the new offcanvas component
+import Offcanvas from './Offcanvas';
+import ContextMenu from './ContextMenu';
 
 import Tooltip from "./Tooltip";
 import { getReverseComplement, filterFeatures } from "../utils";
@@ -33,6 +34,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
     const [ref, { width }] = useMeasure();
   
     const [hoveredInfo, setHoveredInfo] = useState(null);
+    const [contextMenu, setContextMenu] = useState({ x: null, y: null });
     const [genbankData, setGenbankData] = useState(null);
     const [sequenceHits, setSequenceHits] = useState([]);
     const [curSeqHitIndex, setCurSeqHitIndex] = useState(0);
@@ -115,22 +117,8 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
       const handleKeyDown = (e) => {
         // ctrl-C
         if ((e.ctrlKey || e.metaKey) && e.keyCode === 67) {
-          const selStart = Math.min(whereMouseWentDown, whereMouseWentUp);
-          const selEnd = Math.max(whereMouseWentDown, whereMouseWentUp);
-          //console.log(selStart,selEnd);
-          let selectedText = genbankData.parsedSequence.sequence.substring(
-            selStart,
-            selEnd
-          );
-          if (selectedText) {
-            if (e.shiftKey) {
-              selectedText = getReverseComplement(selectedText);
-            }
-            console.log(selectedText);
-            navigator.clipboard.writeText(selectedText);
-            toast.success(
-              `Copied ${e.shiftKey ? "reverse complement" : ""} to clipboard`
-            );
+          if (whereMouseWentDown !== null && whereMouseWentUp !== null) {
+            copySelectedSequence(e.shiftKey);
             e.preventDefault();
           }
         }
@@ -346,6 +334,51 @@ if (hit1 === -1) {
     }, [genbankData]);
 
   
+    // Handle context menu
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+      
+        setContextMenu({ x: e.clientX, y: e.clientY });
+      
+    };
+
+    const handleCloseContextMenu = () => {
+      setContextMenu({ x: null, y: null });
+    };
+
+    const copySelectedSequence = (asReverseComplement = false) => {
+      if (!whereMouseWentDown || !whereMouseWentUp) return;
+      
+      const selStart = Math.min(whereMouseWentDown, whereMouseWentUp);
+      const selEnd = Math.max(whereMouseWentDown, whereMouseWentUp);
+      let selectedText = genbankData.parsedSequence.sequence.substring(selStart, selEnd);
+      
+      if (asReverseComplement) {
+        selectedText = getReverseComplement(selectedText);
+      }
+      
+      navigator.clipboard.writeText(selectedText);
+      toast.success(`Copied ${asReverseComplement ? 'reverse complement ' : ''}to clipboard`);
+    };
+
+    const handleCopySelection = () => {
+      copySelectedSequence(false);
+      handleCloseContextMenu();
+    };
+
+    const handleCopyRC = () => {
+      copySelectedSequence(true);
+      handleCloseContextMenu();
+    };
+
+    useEffect(() => {
+      document.addEventListener('click', handleCloseContextMenu);
+      return () => {
+        document.removeEventListener('click', handleCloseContextMenu);
+      };
+    }, []);
+
+
   
     //console.log("virtualItems", virtualItems);
   
@@ -361,7 +394,9 @@ if (hit1 === -1) {
       );
     }
   
+
     return (<>
+      <div onContextMenu={handleContextMenu}>
     <Dialog
     open={configModalOpen}
     onClose={() => setConfigModalOpen(false)}
@@ -536,10 +571,18 @@ if (hit1 === -1) {
         </div>
       </div>
 
+      {contextMenu.x !== null && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={handleCloseContextMenu}
+          onCopy={handleCopySelection}
+          onCopyRC={handleCopyRC}
+        />
+      )}
    
-{
-  featureOffcanvasOpen &&
-    <Offcanvas isOpen={featureOffcanvasOpen} onClose={() => setFeatureOffcanvasOpen(false)}>
+      {featureOffcanvasOpen && (
+        <Offcanvas isOpen={featureOffcanvasOpen} onClose={() => setFeatureOffcanvasOpen(false)}>
       <table className="min-w-full divide-y divide-gray-200">
         <thead>
           <tr>
@@ -604,10 +647,11 @@ if (hit1 === -1) {
           ))}
         </tbody>
       </table>
-    </Offcanvas>
+        </Offcanvas>
+      )}
+      </div>
+    </>
+  );
 }
-      </>
-    );
-  }
 
-    export default GensploreView;
+export default GensploreView;
