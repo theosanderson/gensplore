@@ -382,6 +382,7 @@ const SingleRow = ({
                   }
                   onMouseLeave={() => setHoveredInfo(null)}
                   fillOpacity={0.75}
+                  style={{cursor: 'pointer'}}
                 >
                   {codon.aminoAcid}
                 </text>
