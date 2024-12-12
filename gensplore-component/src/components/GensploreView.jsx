@@ -473,11 +473,11 @@ if (hit1 === -1) {
               {
                 // small logo on left, name and definition on right
               }
-              {whereMouseWentDown !== null && whereMouseWentUp !== null && (
+              {whereMouseWentDown !== null && (whereMouseWentUp !== null || whereMouseCurrentlyIs !== null) && (
                 <div className="fixed bottom-1 left-1 z-10 px-2 py-2 text-xs rounded shadow bg-white text-gray-700">
-                  Selection: {Math.min(whereMouseWentDown, whereMouseWentUp)} - {Math.max(whereMouseWentDown, whereMouseWentUp)}
+                  Selection: {Math.min(whereMouseWentDown, whereMouseWentUp || whereMouseCurrentlyIs)} - {Math.max(whereMouseWentDown, whereMouseWentUp || whereMouseCurrentlyIs)}
                   <br/>
-                  Length: {Math.abs(whereMouseWentUp - whereMouseWentDown)}
+                  Length: {Math.abs((whereMouseWentUp || whereMouseCurrentlyIs) - whereMouseWentDown)}
                 </div>
               )}
             
