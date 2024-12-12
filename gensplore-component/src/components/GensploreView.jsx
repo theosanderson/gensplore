@@ -117,22 +117,8 @@ function GensploreView({ genbankString, searchInput, setSearchInput, showLogo })
       const handleKeyDown = (e) => {
         // ctrl-C
         if ((e.ctrlKey || e.metaKey) && e.keyCode === 67) {
-          const selStart = Math.min(whereMouseWentDown, whereMouseWentUp);
-          const selEnd = Math.max(whereMouseWentDown, whereMouseWentUp);
-          //console.log(selStart,selEnd);
-          let selectedText = genbankData.parsedSequence.sequence.substring(
-            selStart,
-            selEnd
-          );
-          if (selectedText) {
-            if (e.shiftKey) {
-              selectedText = getReverseComplement(selectedText);
-            }
-            console.log(selectedText);
-            navigator.clipboard.writeText(selectedText);
-            toast.success(
-              `Copied ${e.shiftKey ? "reverse complement" : ""} to clipboard`
-            );
+          if (whereMouseWentDown !== null && whereMouseWentUp !== null) {
+            copySelectedSequence(e.shiftKey);
             e.preventDefault();
           }
         }
@@ -375,22 +361,28 @@ if (hit1 === -1) {
       setContextMenu({ x: null, y: null });
     };
 
-    const handleCopySelection = () => {
+    const copySelectedSequence = (asReverseComplement = false) => {
+      if (!whereMouseWentDown || !whereMouseWentUp) return;
+      
       const selStart = Math.min(whereMouseWentDown, whereMouseWentUp);
       const selEnd = Math.max(whereMouseWentDown, whereMouseWentUp);
-      const selectedText = genbankData.parsedSequence.sequence.substring(selStart, selEnd);
+      let selectedText = genbankData.parsedSequence.sequence.substring(selStart, selEnd);
+      
+      if (asReverseComplement) {
+        selectedText = getReverseComplement(selectedText);
+      }
+      
       navigator.clipboard.writeText(selectedText);
-      toast.success('Copied to clipboard');
+      toast.success(`Copied ${asReverseComplement ? 'reverse complement ' : ''}to clipboard`);
+    };
+
+    const handleCopySelection = () => {
+      copySelectedSequence(false);
       handleCloseContextMenu();
     };
 
     const handleCopyRC = () => {
-      const selStart = Math.min(whereMouseWentDown, whereMouseWentUp);
-      const selEnd = Math.max(whereMouseWentDown, whereMouseWentUp);
-      const selectedText = genbankData.parsedSequence.sequence.substring(selStart, selEnd);
-      const rc = getReverseComplement(selectedText);
-      navigator.clipboard.writeText(rc);
-      toast.success('Copied reverse complement to clipboard');
+      copySelectedSequence(true);
       handleCloseContextMenu();
     };
 
