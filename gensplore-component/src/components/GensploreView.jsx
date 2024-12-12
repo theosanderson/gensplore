@@ -21,9 +21,8 @@ import { useMeasure } from "react-use"; // or just 'react-use-measure'
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { ToastContainer, toast } from "react-toastify";
 import SearchPanel from "../SearchPanel";
-import { GiDna1 } from "react-icons/gi";
 
-function GensploreView({ genbankString, searchInput, setSearchInput, showLogo }) {
+function GensploreView({ genbankString, searchInput, setSearchInput }) {
     const [searchPanelOpen, setSearchPanelOpen] = useState(false);
     const [zoomLevel, setRawZoomLevel] = useState(0);
     const [whereMouseWentDown, setWhereMouseWentDown] = useState(null);
@@ -474,35 +473,13 @@ if (hit1 === -1) {
               {
                 // small logo on left, name and definition on right
               }
-              {showLogo && (
-              <div className="flex flex-row">
-                <div className="flex flex-col">
-                  <h3 className="text-xl mr-3 text-gray-700 ml-4 font-bold ">
-                    <a href="/">
-                      <GiDna1 className="inline" />
-                      Gensplore
-                    </a>
-                  </h3>
+              {whereMouseWentDown !== null && whereMouseWentUp !== null && (
+                <div className="fixed bottom-1 left-1 z-10 px-2 py-2 text-xs rounded shadow bg-white text-gray-700">
+                  Selection: {Math.min(whereMouseWentDown, whereMouseWentUp)} - {Math.max(whereMouseWentDown, whereMouseWentUp)}
+                  <br/>
+                  Length: {Math.abs(whereMouseWentUp - whereMouseWentDown)}
                 </div>
-              </div>
               )}
-              <div className="fixed bottom-1 left-1 z-10 flex items-center space-x-2">
-                {!showLogo && (
-                  <div className="px-2 py-2 text-xs rounded shadow bg-white text-gray-700">
-                    <a href="//gensplore.genomium.org">
-                      <GiDna1 className="inline" />
-                      Gensplore
-                    </a>
-                  </div>
-                )}
-                {whereMouseWentDown !== null && whereMouseWentUp !== null && (
-                  <div className="px-2 py-2 text-xs rounded shadow bg-white text-gray-700">
-                    Selection: {Math.min(whereMouseWentDown, whereMouseWentUp)} - {Math.max(whereMouseWentDown, whereMouseWentUp)}
-                    <br/>
-                    Length: {Math.abs(whereMouseWentUp - whereMouseWentDown)}
-                  </div>
-                )}
-              </div>
             
               <div className="flex flex-col ml-4 mt-3 text-gray-900">
                 <h2 className="text-2xl">{genbankData.parsedSequence.name}</h2>
