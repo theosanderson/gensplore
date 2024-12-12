@@ -474,8 +474,8 @@ if (hit1 === -1) {
                 // small logo on left, name and definition on right
               }
               {whereMouseWentDown !== null && (whereMouseWentUp !== null || whereMouseCurrentlyIs !== null) && (
-                <div className="fixed bottom-1 left-1 z-10 px-4 py-3 text-sm rounded-lg shadow-lg bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200">
-                  <div className="flex flex-col space-y-1">
+                <div className="fixed bottom-1 left-1 z-10 px-3 py-2 text-sm rounded-lg shadow-lg bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200">
+                  <div className="flex flex-col space-y-0.5">
                     <div className="flex items-center space-x-2">
                       <span className="font-medium text-gray-700">Position:</span>
                       <span className="font-mono text-gray-700">
@@ -488,7 +488,6 @@ if (hit1 === -1) {
                         {Math.abs((whereMouseWentUp || whereMouseCurrentlyIs) - whereMouseWentDown)} bp
                       </span>
                     </div>
-                    
                   </div>
                 </div>
               )}
