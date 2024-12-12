@@ -337,9 +337,9 @@ if (hit1 === -1) {
     // Handle context menu
     const handleContextMenu = (e) => {
       e.preventDefault();
-      if (whereMouseWentDown !== null && whereMouseWentUp !== null) {
+      
         setContextMenu({ x: e.clientX, y: e.clientY });
-      }
+      
     };
 
     const handleCloseContextMenu = () => {

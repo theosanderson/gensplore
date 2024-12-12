@@ -523,6 +523,10 @@ const SingleRow = ({
         ...(isSelected ? { backgroundColor: "#ffffee" } : {}),
       }}
       onMouseDown={(e) => {
+        // if right mouse button, don't do anything
+        if (e.button == 2) {
+          return;
+        }
         // figure out which nucleotide was clicked
         const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
         const nucleotide =
@@ -532,6 +536,10 @@ const SingleRow = ({
         e.preventDefault();
       }}
       onMouseUp={(e) => {
+        // if right mouse button, don't do anything
+        if (e.button == 2) {
+          return;
+        }
         // figure out which nucleotide was clicked
         const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
         const nucleotide =
