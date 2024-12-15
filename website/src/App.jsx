@@ -213,12 +213,16 @@ const App = () => {
                 </button>
               </div>
               <div>
-                {genbankId && genbankId.length > 1 && (
+                {
+                  /*
+                  {genbankId && genbankId.length > 1 && (
                   <p className="text-gray-500 text-xs mt-2">
                     This will only work for virus-sized genomes, for bacterial
                     genomes please upload a file above.
                   </p>
                 )}
+*/
+                }
               </div>
               {genbankResults && genbankResults.length > 0 && (
                 <div className="mt-5 text-xs">
