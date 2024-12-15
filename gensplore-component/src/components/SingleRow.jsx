@@ -3,8 +3,7 @@ import { getReverseComplement, filterFeatures, } from "../utils";
 import getColor from "../utils/getColor";
 import codonToAminoAcid from "../utils/codonMapping";
 import { toast } from "react-toastify";
-import '@fontsource/inter-tight';
-import '@fontsource/inter';
+import '@fontsource/open-sans';
 
 // Arrow point configuration
 const SHARP_POINT_OFFSET = 6;  // Offset for actual feature ends (sharp points)
@@ -253,7 +252,7 @@ const SingleRow = ({
           y={10}
           textAnchor="middle"
           fontSize={zoomLevel < -0.5 ? "10" : "12"}
-          fontFamily={zoomLevel < -0.5 ? "Inter Tight" : "Inter"}
+          fontFamily="Open Sans"
           fillOpacity={0.9}
           onMouseEnter={() =>
             setHoveredInfo({
