@@ -329,11 +329,17 @@ const SingleRow = ({
           strokeWidth={1.5}
         />
         {feature.blocks.map((block, j) => (
-          <rect
-            x={block.start * sep - extraFeat}
-            y={y}
-            width={(block.end - block.start) * sep + extraFeat * 2}
-            height={10}
+          <path
+            d={`M ${block.start * sep - extraFeat} ${y}
+                L ${block.end * sep + extraFeat - 10} ${y}
+                L ${block.end * sep + extraFeat} ${y + 5}
+                L ${block.end * sep + extraFeat - 10} ${y + 10}
+                L ${block.start * sep - extraFeat} ${y + 10}
+                ${feature.strand < 0 ? 
+                  `L ${block.start * sep - extraFeat + 10} ${y + 5}` :
+                  `L ${block.start * sep - extraFeat} ${y}`
+                }
+                Z`}
             fill={getColor(feature, product)}
             onClick={() => handleFeatureClick(feature)}
             onMouseEnter={() => {
