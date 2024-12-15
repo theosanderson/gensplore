@@ -4,6 +4,7 @@ import getColor from "../utils/getColor";
 import codonToAminoAcid from "../utils/codonMapping";
 import { toast } from "react-toastify";
 import '@fontsource/open-sans';
+import '@fontsource/open-sans-condensed';
 
 // Arrow point configuration
 const SHARP_POINT_OFFSET = 6;  // Offset for actual feature ends (sharp points)
@@ -252,7 +253,7 @@ const SingleRow = ({
           y={10}
           textAnchor="middle"
           fontSize={zoomLevel < -0.5 ? "10" : "12"}
-          fontFamily="Open Sans"
+          fontFamily={zoomLevel > 0 ? "Open Sans Condensed" : "Open Sans"}
           fillOpacity={0.9}
           onMouseEnter={() =>
             setHoveredInfo({
