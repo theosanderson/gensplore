@@ -347,7 +347,7 @@ const SingleRow = ({
                   // Semi-blunt end for row boundary
                   `L ${block.start * sep - extraFeat + BLUNT_POINT_OFFSET} ${y}
                    L ${block.start * sep - extraFeat} ${y + 5}
-                   L ${block.start * sep - extraFeat + 5} ${y + 10}`
+                   L ${block.start * sep - extraFeat + BLUNT_POINT_OFFSET} ${y + 10}`
                 }
                 L ${block.end * sep + extraFeat} ${y + 10}
                 L ${block.end * sep + extraFeat} ${y}`
@@ -363,7 +363,7 @@ const SingleRow = ({
                   // Semi-blunt end for row boundary
                   `L ${block.end * sep + extraFeat - BLUNT_POINT_OFFSET} ${y}
                    L ${block.end * sep + extraFeat} ${y + 5}
-                   L ${block.end * sep + extraFeat - 5} ${y + 10}`
+                   L ${block.end * sep + extraFeat - BLUNT_POINT_OFFSET} ${y + 10}`
                 }
                 L ${block.start * sep - extraFeat} ${y + 10}
                 L ${block.start * sep - extraFeat} ${y}`
