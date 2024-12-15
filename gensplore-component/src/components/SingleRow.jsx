@@ -3,6 +3,11 @@ import { getReverseComplement, filterFeatures, } from "../utils";
 import getColor from "../utils/getColor";
 import codonToAminoAcid from "../utils/codonMapping";
 import { toast } from "react-toastify";
+
+// Arrow point configuration
+const SHARP_POINT_OFFSET = 10;  // Offset for actual feature ends (sharp points)
+const BLUNT_POINT_OFFSET = 5;   // Offset for row boundary ends (semi-blunt)
+
 var colorHash = new ColorHash({ lightness: [0.75, 0.9, 0.7, 0.8] });
 
 const SingleRow = ({
@@ -335,12 +340,12 @@ const SingleRow = ({
                 `M ${block.end * sep + extraFeat} ${y}
                 ${block.startIsActual ? 
                   // Sharp point for actual start
-                  `L ${block.start * sep - extraFeat + 10} ${y}
+                  `L ${block.start * sep - extraFeat + SHARP_POINT_OFFSET} ${y}
                    L ${block.start * sep - extraFeat} ${y + 5}
-                   L ${block.start * sep - extraFeat + 10} ${y + 10}`
+                   L ${block.start * sep - extraFeat + SHARP_POINT_OFFSET} ${y + 10}`
                   :
                   // Semi-blunt end for row boundary
-                  `L ${block.start * sep - extraFeat + 5} ${y}
+                  `L ${block.start * sep - extraFeat + BLUNT_POINT_OFFSET} ${y}
                    L ${block.start * sep - extraFeat} ${y + 5}
                    L ${block.start * sep - extraFeat + 5} ${y + 10}`
                 }
@@ -351,12 +356,12 @@ const SingleRow = ({
                 `M ${block.start * sep - extraFeat} ${y}
                 ${block.endIsActual ?
                   // Sharp point for actual end
-                  `L ${block.end * sep + extraFeat - 10} ${y}
+                  `L ${block.end * sep + extraFeat - SHARP_POINT_OFFSET} ${y}
                    L ${block.end * sep + extraFeat} ${y + 5}
-                   L ${block.end * sep + extraFeat - 10} ${y + 10}`
+                   L ${block.end * sep + extraFeat - SHARP_POINT_OFFSET} ${y + 10}`
                   :
                   // Semi-blunt end for row boundary
-                  `L ${block.end * sep + extraFeat - 5} ${y}
+                  `L ${block.end * sep + extraFeat - BLUNT_POINT_OFFSET} ${y}
                    L ${block.end * sep + extraFeat} ${y + 5}
                    L ${block.end * sep + extraFeat - 5} ${y + 10}`
                 }
