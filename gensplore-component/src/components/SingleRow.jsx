@@ -339,9 +339,10 @@ const SingleRow = ({
                    L ${block.start * sep - extraFeat} ${y + 5}
                    L ${block.start * sep - extraFeat + 10} ${y + 10}`
                   :
-                  // Blunt end for row boundary
-                  `L ${block.start * sep - extraFeat} ${y}
-                   L ${block.start * sep - extraFeat} ${y + 10}`
+                  // Semi-blunt end for row boundary
+                  `L ${block.start * sep - extraFeat + 5} ${y}
+                   L ${block.start * sep - extraFeat} ${y + 5}
+                   L ${block.start * sep - extraFeat + 5} ${y + 10}`
                 }
                 L ${block.end * sep + extraFeat} ${y + 10}
                 L ${block.end * sep + extraFeat} ${y}`
@@ -354,9 +355,10 @@ const SingleRow = ({
                    L ${block.end * sep + extraFeat} ${y + 5}
                    L ${block.end * sep + extraFeat - 10} ${y + 10}`
                   :
-                  // Blunt end for row boundary
-                  `L ${block.end * sep + extraFeat} ${y}
-                   L ${block.end * sep + extraFeat} ${y + 10}`
+                  // Semi-blunt end for row boundary
+                  `L ${block.end * sep + extraFeat - 5} ${y}
+                   L ${block.end * sep + extraFeat} ${y + 5}
+                   L ${block.end * sep + extraFeat - 5} ${y + 10}`
                 }
                 L ${block.start * sep - extraFeat} ${y + 10}
                 L ${block.start * sep - extraFeat} ${y}`
