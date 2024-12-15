@@ -331,17 +331,33 @@ const SingleRow = ({
         {feature.blocks.map((block, j) => (
           <path
             d={`${feature.strand < 0 ?
+                // Reverse strand
                 `M ${block.end * sep + extraFeat} ${y}
-                L ${block.start * sep - extraFeat + 10} ${y}
-                L ${block.start * sep - extraFeat} ${y + 5}
-                L ${block.start * sep - extraFeat + 10} ${y + 10}
+                ${block.startIsActual ? 
+                  // Sharp point for actual start
+                  `L ${block.start * sep - extraFeat + 10} ${y}
+                   L ${block.start * sep - extraFeat} ${y + 5}
+                   L ${block.start * sep - extraFeat + 10} ${y + 10}`
+                  :
+                  // Blunt end for row boundary
+                  `L ${block.start * sep - extraFeat} ${y}
+                   L ${block.start * sep - extraFeat} ${y + 10}`
+                }
                 L ${block.end * sep + extraFeat} ${y + 10}
                 L ${block.end * sep + extraFeat} ${y}`
                 :
+                // Forward strand
                 `M ${block.start * sep - extraFeat} ${y}
-                L ${block.end * sep + extraFeat - 10} ${y}
-                L ${block.end * sep + extraFeat} ${y + 5}
-                L ${block.end * sep + extraFeat - 10} ${y + 10}
+                ${block.endIsActual ?
+                  // Sharp point for actual end
+                  `L ${block.end * sep + extraFeat - 10} ${y}
+                   L ${block.end * sep + extraFeat} ${y + 5}
+                   L ${block.end * sep + extraFeat - 10} ${y + 10}`
+                  :
+                  // Blunt end for row boundary
+                  `L ${block.end * sep + extraFeat} ${y}
+                   L ${block.end * sep + extraFeat} ${y + 10}`
+                }
                 L ${block.start * sep - extraFeat} ${y + 10}
                 L ${block.start * sep - extraFeat} ${y}`
                 }
