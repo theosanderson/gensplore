@@ -330,14 +330,20 @@ const SingleRow = ({
         />
         {feature.blocks.map((block, j) => (
           <path
-            d={`M ${block.start * sep - extraFeat} ${y}
+            d={`${feature.strand < 0 ?
+                `M ${block.end * sep + extraFeat} ${y}
+                L ${block.start * sep - extraFeat + 10} ${y}
+                L ${block.start * sep - extraFeat} ${y + 5}
+                L ${block.start * sep - extraFeat + 10} ${y + 10}
+                L ${block.end * sep + extraFeat} ${y + 10}
+                L ${block.end * sep + extraFeat} ${y}`
+                :
+                `M ${block.start * sep - extraFeat} ${y}
                 L ${block.end * sep + extraFeat - 10} ${y}
                 L ${block.end * sep + extraFeat} ${y + 5}
                 L ${block.end * sep + extraFeat - 10} ${y + 10}
                 L ${block.start * sep - extraFeat} ${y + 10}
-                ${feature.strand < 0 ? 
-                  `L ${block.start * sep - extraFeat + 10} ${y + 5}` :
-                  `L ${block.start * sep - extraFeat} ${y}`
+                L ${block.start * sep - extraFeat} ${y}`
                 }
                 Z`}
             fill={getColor(feature, product)}
