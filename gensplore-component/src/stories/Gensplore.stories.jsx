@@ -319,6 +319,12 @@ FEATURES             Location/Qualifiers
                      /product="leader protein"
                      /note="nsp1; produced by both pp1a and pp1ab"
                      /protein_id="YP_009725297.1"
+     CDS             complement(266..805)
+                     /gene="backwards"
+                     /locus_tag="backwards"
+                     /product="leader backwards"
+                     /note="nsp1; produced by both pp1a and pp1ab"
+                     /protein_id="YP_009725297.1"
      CDS             806..2719
                      /gene="nsp2"
                      /locus_tag="GU280_gp01"

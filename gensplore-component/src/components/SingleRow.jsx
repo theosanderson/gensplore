@@ -5,8 +5,8 @@ import codonToAminoAcid from "../utils/codonMapping";
 import { toast } from "react-toastify";
 
 // Arrow point configuration
-const SHARP_POINT_OFFSET = 10;  // Offset for actual feature ends (sharp points)
-const BLUNT_POINT_OFFSET = 5;   // Offset for row boundary ends (semi-blunt)
+const SHARP_POINT_OFFSET = 6;  // Offset for actual feature ends (sharp points)
+const BLUNT_POINT_OFFSET = 1;   // Offset for row boundary ends (semi-blunt)
 
 var colorHash = new ColorHash({ lightness: [0.75, 0.9, 0.7, 0.8] });
 
@@ -325,9 +325,9 @@ const SingleRow = ({
     return (
       <g key={i}>
         <line
-          x1={x}
+          x1={x + 2}
           y1={y + 5}
-          x2={x + width}
+          x2={x + width - 2}
           y2={y + 5}
           stroke={getColor(feature, product)}
           // width 2
