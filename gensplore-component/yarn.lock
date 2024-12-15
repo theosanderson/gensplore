@@ -1968,6 +1968,41 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fontsource/inter-tight@npm:^5.1.0":
+  version: 5.1.0
+  resolution: "@fontsource/inter-tight@npm:5.1.0"
+  checksum: 596d73bae064517147a155ae8fccccf25105ec173fe6054964ddc5fa5ab3ade4bf6a6417bc2fe22494954788b7080fb20ecb0c8959e3079a26388373747b9fb6
+  languageName: node
+  linkType: hard
+
+"@fontsource/inter@npm:^5.1.0":
+  version: 5.1.0
+  resolution: "@fontsource/inter@npm:5.1.0"
+  checksum: 48c740b8a311908ca9527bf598e759bdfad6429f730450cc4904877915537e857a322db3ff7ade0bf731a3853ab34e611638d560529774a7e94ca2237735c86b
+  languageName: node
+  linkType: hard
+
+"@fontsource/open-sans-condensed@npm:^4.5.5":
+  version: 4.5.5
+  resolution: "@fontsource/open-sans-condensed@npm:4.5.5"
+  checksum: df51c11e05c264f572ef43fdc96455eba4d16d1f5e183b50e4c36e096634d18750f3982db600f89b50fcb9f02125bb5437f964a2ba8b7fd050959f8689de749e
+  languageName: node
+  linkType: hard
+
+"@fontsource/open-sans@npm:^5.1.0":
+  version: 5.1.0
+  resolution: "@fontsource/open-sans@npm:5.1.0"
+  checksum: 024ed724e45db2219383a919a55ccd8e2f1008ded3a706d0068caa827574147674e9ebb7e47b6de154f1dec330036c10bad0ac1078d25718bf396af517b1a0ed
+  languageName: node
+  linkType: hard
+
+"@fontsource/roboto-condensed@npm:^5.1.0":
+  version: 5.1.0
+  resolution: "@fontsource/roboto-condensed@npm:5.1.0"
+  checksum: f9038fe9030589440e453876bdd0d1c69224f065c64410c77092b8a3dba5dfa31e26f372ba11a04575e24cb95e759394f511066e8a44cfa16a156cb092817e3e
+  languageName: node
+  linkType: hard
+
 "@gmod/gff@npm:^1.2.1":
   version: 1.3.0
   resolution: "@gmod/gff@npm:1.3.0"
@@ -6838,6 +6873,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "gensplore@workspace:."
   dependencies:
+    "@fontsource/inter": "npm:^5.1.0"
+    "@fontsource/inter-tight": "npm:^5.1.0"
+    "@fontsource/open-sans": "npm:^5.1.0"
+    "@fontsource/open-sans-condensed": "npm:^4.5.5"
+    "@fontsource/roboto-condensed": "npm:^5.1.0"
     "@headlessui/react": "npm:^1.7.16"
     "@storybook/addon-essentials": "npm:^7.5.3"
     "@storybook/addon-interactions": "npm:^7.5.3"

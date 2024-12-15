@@ -3,6 +3,13 @@ import { getReverseComplement, filterFeatures, } from "../utils";
 import getColor from "../utils/getColor";
 import codonToAminoAcid from "../utils/codonMapping";
 import { toast } from "react-toastify";
+import '@fontsource/open-sans';
+import '@fontsource/open-sans-condensed';
+
+// Arrow point configuration
+const SHARP_POINT_OFFSET = 6;  // Offset for actual feature ends (sharp points)
+const BLUNT_POINT_OFFSET = 1;   // Offset for row boundary ends (semi-blunt)
+
 var colorHash = new ColorHash({ lightness: [0.75, 0.9, 0.7, 0.8] });
 
 const SingleRow = ({
@@ -245,7 +252,9 @@ const SingleRow = ({
           x={x}
           y={10}
           textAnchor="middle"
-          fontSize={zoomLevel < -0.5 ? "10" : "12"}
+          fontSize={zoomLevel < -1 ? "11" : "12"}
+          fontFamily={zoomLevel < -0.25 ? "Open Sans Condensed" : "sans-serif"}
+          fontWeight={zoomLevel < -0.25 ? "600" : "400"}
           fillOpacity={0.9}
           onMouseEnter={() =>
             setHoveredInfo({
@@ -320,20 +329,50 @@ const SingleRow = ({
     return (
       <g key={i}>
         <line
-          x1={x}
+          x1={x + 2}
           y1={y + 5}
-          x2={x + width}
+          x2={x + width - 2}
           y2={y + 5}
           stroke={getColor(feature, product)}
           // width 2
           strokeWidth={1.5}
         />
         {feature.blocks.map((block, j) => (
-          <rect
-            x={block.start * sep - extraFeat}
-            y={y}
-            width={(block.end - block.start) * sep + extraFeat * 2}
-            height={10}
+          <path
+            d={`${feature.strand < 0 ?
+                // Reverse strand
+                `M ${block.end * sep + extraFeat} ${y}
+                ${block.startIsActual ? 
+                  // Sharp point for actual start
+                  `L ${block.start * sep - extraFeat + SHARP_POINT_OFFSET} ${y}
+                   L ${block.start * sep - extraFeat} ${y + 5}
+                   L ${block.start * sep - extraFeat + SHARP_POINT_OFFSET} ${y + 10}`
+                  :
+                  // Semi-blunt end for row boundary
+                  `L ${block.start * sep - extraFeat + BLUNT_POINT_OFFSET} ${y}
+                   L ${block.start * sep - extraFeat} ${y + 5}
+                   L ${block.start * sep - extraFeat + BLUNT_POINT_OFFSET} ${y + 10}`
+                }
+                L ${block.end * sep + extraFeat} ${y + 10}
+                L ${block.end * sep + extraFeat} ${y}`
+                :
+                // Forward strand
+                `M ${block.start * sep - extraFeat} ${y}
+                ${block.endIsActual ?
+                  // Sharp point for actual end
+                  `L ${block.end * sep + extraFeat - SHARP_POINT_OFFSET} ${y}
+                   L ${block.end * sep + extraFeat} ${y + 5}
+                   L ${block.end * sep + extraFeat - SHARP_POINT_OFFSET} ${y + 10}`
+                  :
+                  // Semi-blunt end for row boundary
+                  `L ${block.end * sep + extraFeat - BLUNT_POINT_OFFSET} ${y}
+                   L ${block.end * sep + extraFeat} ${y + 5}
+                   L ${block.end * sep + extraFeat - BLUNT_POINT_OFFSET} ${y + 10}`
+                }
+                L ${block.start * sep - extraFeat} ${y + 10}
+                L ${block.start * sep - extraFeat} ${y}`
+                }
+                Z`}
             fill={getColor(feature, product)}
             onClick={() => handleFeatureClick(feature)}
             onMouseEnter={() => {
