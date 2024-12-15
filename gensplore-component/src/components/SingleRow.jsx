@@ -280,7 +280,9 @@ const SingleRow = ({
           x={x}
           y={10}
           textAnchor="middle"
-          fontSize={zoomLevel < -0.5 ? "10" : "12"}
+          fontSize={zoomLevel < -1 ? "11" : "12"}
+          fontFamily={zoomLevel < -0.25 ? "Open Sans Condensed" : "sans-serif"}
+          fontWeight={zoomLevel < -0.25 ? "600" : "400"}
           fillOpacity={0.9}
           onMouseEnter={() =>
             setHoveredInfo({
