@@ -253,7 +253,7 @@ const SingleRow = ({
           y={10}
           textAnchor="middle"
           fontSize={zoomLevel < -1 ? "11" : "12"}
-          fontFamily={zoomLevel < -0.25 ? "Open Sans Condensed" : "Open Sans"}
+          fontFamily={zoomLevel < -0.25 ? "Open Sans Condensed" : "sans-serif"}
           fontWeight={zoomLevel < -0.25 ? "600" : "400"}
           fillOpacity={0.9}
           onMouseEnter={() =>
