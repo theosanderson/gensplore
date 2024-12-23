@@ -68,7 +68,7 @@ function boxesOverlap(a, b) {
  */
 function placeLabel(desiredX, y, text, usedBoxes, maxTries, featureX, featureWidth) {
   const avgCharWidth = 6;  // Tweak as needed
-  const labelWidth = text.length * avgCharWidth;
+  const labelWidth = text.length * avgCharWidth +10;
   const labelHeight = 10; // Rough line height
 
   // The label must fit within the feature: from featureX to (featureX + featureWidth - labelWidth).
