@@ -1,16 +1,113 @@
 import ColorHash from "color-hash";
-import { getReverseComplement, filterFeatures, } from "../utils";
+import { getReverseComplement, filterFeatures } from "../utils";
 import getColor from "../utils/getColor";
 import codonToAminoAcid from "../utils/codonMapping";
 import { toast } from "react-toastify";
-import '@fontsource/open-sans';
-import '@fontsource/open-sans-condensed';
+import "@fontsource/open-sans";
+import "@fontsource/open-sans-condensed";
 
-// Arrow point configuration
-const SHARP_POINT_OFFSET = 6;  // Offset for actual feature ends (sharp points)
-const BLUNT_POINT_OFFSET = 1;   // Offset for row boundary ends (semi-blunt)
+const SHARP_POINT_OFFSET = 6;
+const BLUNT_POINT_OFFSET = 1;
 
 var colorHash = new ColorHash({ lightness: [0.75, 0.9, 0.7, 0.8] });
+
+function assignFeatureLanes(featureBlocks) {
+  // Sort by .start ascending
+  const sorted = featureBlocks.slice().sort((a, b) => a.start - b.start);
+
+  const lanes = [];
+  sorted.forEach((feature) => {
+    let placed = false;
+    for (let laneIndex = 0; laneIndex < lanes.length; laneIndex++) {
+      let overlap = false;
+      for (const otherFeature of lanes[laneIndex]) {
+        if (
+          feature.start <= otherFeature.end &&
+          feature.end >= otherFeature.start
+        ) {
+          overlap = true;
+          break;
+        }
+      }
+      if (!overlap) {
+        lanes[laneIndex].push(feature);
+        feature.lane = laneIndex;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      lanes.push([feature]);
+      feature.lane = lanes.length - 1;
+    }
+  });
+
+  return lanes.length;
+}
+
+/**
+ * Helper to detect bounding-box overlap in 2D.
+ * Assumes boxes are {left, top, right, bottom}.
+ */
+function boxesOverlap(a, b) {
+  return !(a.left > b.right || a.right < b.left || a.top > b.bottom || a.bottom < b.top);
+}
+
+/**
+ * Attempt to place a label so it doesn't overlap previously placed labels
+ * and doesn't go outside of the feature's horizontal range.
+ *
+ * @param {number} desiredX - The initial x position to try
+ * @param {number} y        - The y position (top)
+ * @param {string} text     - The label string
+ * @param {Array} usedBoxes - List of {left,top,right,bottom} boxes already in use
+ * @param {number} maxTries - Number of times to nudge to the right before giving up
+ * @param {number} featureX - Left boundary of the feature
+ * @param {number} featureWidth - The feature's total width
+ * @return {{x:number} | null} The placed coordinate or null if no fit
+ */
+function placeLabel(desiredX, y, text, usedBoxes, maxTries, featureX, featureWidth) {
+  const avgCharWidth = 6;  // Tweak as needed
+  const labelWidth = text.length * avgCharWidth;
+  const labelHeight = 10; // Rough line height
+
+  // The label must fit within the feature: from featureX to (featureX + featureWidth - labelWidth).
+  const minX = featureX;
+  const maxX = featureX + featureWidth - labelWidth;
+
+  // If the feature is too short to fit the label at all, just give up.
+  if (maxX < minX) {
+    return null;
+  }
+
+  // Clamp initial X to [minX, maxX].
+  //let newX = Math.max(minX, Math.min(desiredX, maxX));
+  let newX = desiredX == 0 ? desiredX -5 : desiredX;
+  for (let attempt = 0; attempt < maxTries; attempt++) {
+    const box = {
+      left: newX,
+      top: y,
+      right: newX + labelWidth,
+      bottom: y + labelHeight,
+    };
+
+    const overlap = usedBoxes.some((b) => boxesOverlap(box, b));
+    if (!overlap) {
+      // Found a free spot within the feature bounds
+      usedBoxes.push(box);
+      return { x: newX };
+    }
+
+    // Nudge to the right
+    newX += 10;
+    // If newX extends beyond the feature boundary, stop and fail.
+    if (newX > maxX) {
+      break;
+    }
+  }
+  // If we get here, no suitable position was found
+  return null;
+}
 
 const SingleRow = ({
   parsedSequence,
@@ -30,18 +127,19 @@ const SingleRow = ({
   sequenceHits,
   curSeqHitIndex,
   enableRC,
-  visibleFeatures
+  visibleFeatures,
 }) => {
   const zoomFactor = 2 ** zoomLevel;
   const sep = 10 * zoomFactor;
-
   const fullSequence = parsedSequence.sequence;
   const rowSequence = fullSequence.slice(rowStart, rowEnd);
 
+  // Filter relevant features
   const relevantFeatures = visibleFeatures.filter(
-    (feature) => ((feature.start >= rowStart && feature.start <= rowEnd) ||
-        (feature.end >= rowStart && feature.end <= rowEnd) ||
-        (feature.start <= rowStart && feature.end >= rowEnd))
+    (feature) =>
+      (feature.start >= rowStart && feature.start <= rowEnd) ||
+      (feature.end >= rowStart && feature.end <= rowEnd) ||
+      (feature.start <= rowStart && feature.end >= rowEnd)
   );
 
   const searchFeatures = !annotSearchInput
@@ -52,25 +150,11 @@ const SingleRow = ({
     (intSearchInput >= rowStart && intSearchInput <= rowEnd) ||
     searchFeatures.length > 0;
 
-  if (rowStart == 0) {
-    //console.log(relevantFeatures);
-  }
-
+  // Build feature objects
   const featureBlocks = relevantFeatures.map((feature, i) => {
-    let startPos2;
-    let endPos2;
-
-    if (feature.start < rowStart) {
-      startPos2 = 0;
-    } else {
-      startPos2 = feature.start - rowStart;
-    }
-
-    if (feature.end > rowEnd) {
-      endPos2 = rowEnd - rowStart;
-    } else {
-      endPos2 = feature.end - rowStart;
-    }
+    const startPos2 = feature.start < rowStart ? 0 : feature.start - rowStart;
+    const endPos2 =
+      feature.end > rowEnd ? rowEnd - rowStart : feature.end - rowStart;
 
     const locations = feature.locations
       ? feature.locations
@@ -83,57 +167,44 @@ const SingleRow = ({
 
     const blocks = locations
       .filter(
-        (location) =>
-          (location.start >= rowStart && location.start <= rowEnd) ||
-          (location.end >= rowStart && location.end <= rowEnd) ||
-          (location.start <= rowStart && location.end >= rowEnd)
+        (loc) =>
+          (loc.start >= rowStart && loc.start <= rowEnd) ||
+          (loc.end >= rowStart && loc.end <= rowEnd) ||
+          (loc.start <= rowStart && loc.end >= rowEnd)
       )
-      .map((location, j) => {
-        let startPos;
-        let endPos;
+      .map((loc) => {
         let startIsActual = true;
-
-        if (location.start < rowStart) {
-          startPos = 0;
-          startIsActual = false;
-        } else {
-          startPos = location.start - rowStart;
-        }
         let endIsActual = true;
-        if (location.end > rowEnd) {
-          endPos = rowEnd - rowStart;
+        let s = loc.start;
+        let e = loc.end;
+        if (s < rowStart) {
+          s = rowStart;
+          startIsActual = false;
+        }
+        if (e > rowEnd) {
+          e = rowEnd;
           endIsActual = false;
-        } else {
-          endPos = location.end - rowStart;
         }
         return {
-          start: startPos,
-          end: endPos,
-          startIsActual: startIsActual,
-          endIsActual: endIsActual,
+          start: s - rowStart,
+          end: e - rowStart,
+          startIsActual,
+          endIsActual,
         };
       });
 
-    // positions in the translation
-    // for each location in this row: check if it is in any of the locations, if so, figure out which codon it is in
-    // and add it to the map
-
+    // For translations
     const seqLength = locations.reduce(
-      (acc, location) => acc + location.end - location.start + 1,
+      (acc, loc) => acc + loc.end - loc.start + 1,
       0
     );
-
     const codonMap = [];
-    if (
-      zoomLevel > -2 &&
-      (feature.type == "CDS") | (feature.type == "mat_peptide")
-    ) {
+    if (zoomLevel > -2 && (feature.type === "CDS" || feature.type === "mat_peptide")) {
       for (let j = rowStart; j < rowEnd; j++) {
         let positionSoFar = 0;
         for (let k = 0; k < locations.length; k++) {
           if (j >= locations[k].start && j <= locations[k].end) {
             const nucIndex = j;
-
             const codonIndexInitial = Math.floor(
               (j - (locations[k].start - positionSoFar)) / 3
             );
@@ -142,36 +213,34 @@ const SingleRow = ({
                 ? codonIndexInitial
                 : seqLength / 3 - codonIndexInitial - 1;
             const frame = (j - (locations[k].start - positionSoFar)) % 3;
-            if (frame != 1) {
-              continue;
-            }
+            if (frame !== 1) continue;
 
             const middleIndex = nucIndex;
             const middleChar = fullSequence.slice(middleIndex, middleIndex + 1);
             const firstIndex =
               nucIndex - locations[k].start > 0
                 ? nucIndex - 1
-                : locations[k - 1].end;
+                : locations[k - 1]?.end;
             const firstChar = fullSequence.slice(firstIndex, firstIndex + 1);
+
             const lastIndex =
               nucIndex < locations[k].end
                 ? nucIndex + 1
-                : locations[k + 1].start;
+                : locations[k + 1]?.start;
             const lastChar = fullSequence.slice(lastIndex, lastIndex + 1);
+
             const codonSeq = firstChar + middleChar + lastChar;
-            //console.log(nucIndex, locations[k].start, firstChar, middleChar, lastChar);
-
             const aminoAcid = codonToAminoAcid(
-              feature.strand > 0 ? codonSeq : getReverseComplement(codonSeq)
+              feature.strand > 0
+                ? codonSeq
+                : getReverseComplement(codonSeq)
             );
-            //const aminoAcid = forTranslation[codonIndex];
-
             codonMap.push({
               first: firstIndex - rowStart,
               middle: nucIndex - rowStart,
               last: lastIndex - rowStart,
-              aminoAcid: aminoAcid,
-              codonIndex: codonIndex,
+              aminoAcid,
+              codonIndex,
               gene: feature.name,
             });
           }
@@ -179,70 +248,61 @@ const SingleRow = ({
         }
       }
     }
-    //console.log(codonMap);
 
     return {
       start: startPos2,
       end: endPos2,
-
-      blocks: blocks,
+      blocks,
       name: feature.name,
       type: feature.type,
       notes: feature.notes,
       strand: feature.strand,
-      locations: locations,
-      codonMap: codonMap,
+      locations,
+      codonMap,
+      lane: 0,
       key: i,
     };
   });
 
-  const extraPadding = 25;
+  // Assign lanes
+  const laneCount = assignFeatureLanes(featureBlocks);
 
-  // Calculate dimensions and tick interval
-  const width = rowSequence.length * sep; // 10 pixels per character
-  let height = 70 + featureBlocks.length * 20;
-  // if rowStart is more than 5 digits, then we need more spacing
+  // Dimensions
+  const extraPadding = 25;
+  const baseHeight = 70;
+  const rowSpacing = 20;
+  const height = baseHeight + laneCount * rowSpacing;
+  const width = rowSequence.length * sep;
+
+  // Ticks
   const spacing = rowStart > 10000 ? 60 : 40;
-  const approxNumTicks = Math.ceil(width / spacing); // One tick every 60 pixels
+  const approxNumTicks = Math.ceil(width / spacing);
   let tickInterval = Math.ceil(rowSequence.length / approxNumTicks);
   const options = [
     5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000,
     200000, 500000, 1000000, 2000000, 5000000, 10000000,
   ];
-  // find option just larger than tickInterval
-
-  tickInterval = options.find((option) => option >= tickInterval);
+  tickInterval = options.find((o) => o >= tickInterval) || tickInterval;
   const modulus = rowStart % tickInterval;
   const numTicks = Math.floor((rowEnd - rowStart) / tickInterval) + 1;
-
-  // Generate tick labels
   const tickLabels = Array.from({ length: numTicks }, (_, i) => {
     return (i + 1) * tickInterval + rowStart - modulus - 1;
   });
-
-  // Generate ticks and labels
   const ticks = tickLabels.map((label, i) => {
     const x = ((label - rowStart) / (rowEnd - rowStart)) * width;
     return (
       <g key={i}>
         <line x1={x} y1={0} x2={x} y2={10} stroke="black" />
-        <text
-          x={x}
-          y={20}
-          textAnchor="middle"
-          fontSize="10"
-          // bold
-        >
+        <text x={x} y={20} textAnchor="middle" fontSize="10">
           {label + 1}
         </text>
       </g>
     );
   });
 
-  // Generate sequence characters
+  // Sequence
   let chars = null;
   let chars2 = null;
-
   if (zoomLevel > -1) {
     chars = rowSequence.split("").map((char, i) => {
       const x = i * sep;
@@ -268,10 +328,9 @@ const SingleRow = ({
       );
     });
   }
-  const rc = {"A": "T", "T": "A", "C": "G", "G": "C", "N": "N"};
-  if (//window.RC &&
-   zoomLevel > -1) {
-    // Generate reverse complement sequence characters
+
+  const rc = { A: "T", T: "A", C: "G", G: "C", N: "N" };
+  if (zoomLevel > -1) {
     chars2 = rowSequence.split("").map((char, i) => {
       const x = i * sep;
       return (
@@ -297,159 +356,177 @@ const SingleRow = ({
     });
   }
 
-
   const codonZoomThreshold = -2;
 
   const handleFeatureClick = (feature) => {
-    const minLoc = feature.locations.map((loc) => Math.min(loc.start, loc.end)).reduce((a, b) => Math.min(a, b));
-    const maxLoc = feature.locations.map((loc) => Math.max(loc.start, loc.end)).reduce((a, b) => Math.max(a, b));
+    const minLoc = feature.locations
+      .map((loc) => Math.min(loc.start, loc.end))
+      .reduce((a, b) => Math.min(a, b));
+    const maxLoc = feature.locations
+      .map((loc) => Math.max(loc.start, loc.end))
+      .reduce((a, b) => Math.max(a, b));
     setWhereMouseWentDown(minLoc);
-    setWhereMouseWentUp(maxLoc+1);
+    setWhereMouseWentUp(maxLoc + 1);
     if (feature.locations.length > 1) {
       toast.info(
         `This feature has multiple locations. The selection will be from the start of the first location to the end of the last location.`
       );
     }
-    console.log(feature);
   };
 
-  const featureBlocksSVG = featureBlocks.map((feature, i) => {
-    const x = feature.start * sep;
+  // Keep track of used label boxes so we can shift/hide labels if needed
+  const usedLabelBoxes = [];
 
-    const width = (feature.end - feature.start) * sep;
+  const featureBlocksSVG = featureBlocks.map((feature) => {
+    // Feature's bounding box in the row
+    const featureX = feature.start * sep;
+    const featureWidth = (feature.end - feature.start) * sep;
+    const y = 7 + feature.lane * 20;
 
-    const y = 7 + i * 20;
-    const extraFeat = 5 * zoomFactor;
-    const codonPad = 15 * zoomFactor;
-
-    const product = feature.notes ? feature.notes.product : "";
-    let betterName = feature.type == "mat_peptide" ? product : feature.name;
-
-    const altName = feature.type == "mat_peptide" ? feature.name : product;
-    if (betterName == "Untitled Feature") betterName = feature.type;
+    const product = feature.notes?.product || "";
+    let betterName = feature.type === "mat_peptide" ? product : feature.name;
+    const altName = feature.type === "mat_peptide" ? feature.name : product;
+    if (betterName === "Untitled Feature") betterName = feature.type;
 
     return (
-      <g key={i}>
+      <g key={feature.key}>
+        {/* Baseline from start to end */}
         <line
-          x1={x + 2}
+          x1={featureX + 2}
           y1={y + 5}
-          x2={x + width - 2}
+          x2={featureX + featureWidth - 2}
           y2={y + 5}
           stroke={getColor(feature, product)}
-          // width 2
           strokeWidth={1.5}
         />
-        {feature.blocks.map((block, j) => (
-          <path
-            d={`${feature.strand < 0 ?
-                // Reverse strand
-                `M ${block.end * sep + extraFeat} ${y}
-                ${block.startIsActual ? 
-                  // Sharp point for actual start
-                  `L ${block.start * sep - extraFeat + SHARP_POINT_OFFSET} ${y}
-                   L ${block.start * sep - extraFeat} ${y + 5}
-                   L ${block.start * sep - extraFeat + SHARP_POINT_OFFSET} ${y + 10}`
-                  :
-                  // Semi-blunt end for row boundary
-                  `L ${block.start * sep - extraFeat + BLUNT_POINT_OFFSET} ${y}
-                   L ${block.start * sep - extraFeat} ${y + 5}
-                   L ${block.start * sep - extraFeat + BLUNT_POINT_OFFSET} ${y + 10}`
-                }
-                L ${block.end * sep + extraFeat} ${y + 10}
-                L ${block.end * sep + extraFeat} ${y}`
-                :
-                // Forward strand
-                `M ${block.start * sep - extraFeat} ${y}
-                ${block.endIsActual ?
-                  // Sharp point for actual end
-                  `L ${block.end * sep + extraFeat - SHARP_POINT_OFFSET} ${y}
-                   L ${block.end * sep + extraFeat} ${y + 5}
-                   L ${block.end * sep + extraFeat - SHARP_POINT_OFFSET} ${y + 10}`
-                  :
-                  // Semi-blunt end for row boundary
-                  `L ${block.end * sep + extraFeat - BLUNT_POINT_OFFSET} ${y}
-                   L ${block.end * sep + extraFeat} ${y + 5}
-                   L ${block.end * sep + extraFeat - BLUNT_POINT_OFFSET} ${y + 10}`
-                }
-                L ${block.start * sep - extraFeat} ${y + 10}
-                L ${block.start * sep - extraFeat} ${y}`
-                }
-                Z`}
-            fill={getColor(feature, product)}
-            onClick={() => handleFeatureClick(feature)}
-            onMouseEnter={() => {
-              if (zoomLevel < codonZoomThreshold)
-                setHoveredInfo({
-                  label: `${feature.name}: ${feature.type}`,
-                  product: altName,
-                  locusTag:
-                    feature.notes && feature.notes.locus_tag
-                      ? feature.notes.locus_tag
-                      : null,
-                });
-            }}
-            onMouseLeave={() => {
-              if (zoomLevel < codonZoomThreshold) setHoveredInfo(null);
-            }}
-            style={{cursor: 'pointer'}}
-          />
-        ))}
 
-        <text x={x - 10} y={y} textAnchor="left" fontSize="10">
-          {betterName}
-        </text>
-        {feature.codonMap.map((codon, j) => {
+        {/* Sub-locations */}
+        {feature.blocks.map((block, j) => {
+          const blockX1 = block.start * sep - 5 * zoomFactor;
+          const blockX2 = block.end * sep + 5 * zoomFactor;
           return (
-            <>
-              {zoomLevel > codonZoomThreshold && (
-                <text
-                  key={j}
-                  x={codon.middle * sep}
-                  y={y + 9}
-                  textAnchor="middle"
-                  fontSize="10"
-                  onClick={() => handleFeatureClick(feature)}
-                  onMouseOver={() =>
-                    setHoveredInfo({
-                      label: `${betterName}: ${codon.aminoAcid}${
-                        codon.codonIndex + 1
-                      }`,
-                      product: altName,
-                      locusTag:
-                        feature.notes && feature.notes.locus_tag
-                          ? feature.notes.locus_tag
-                          : null,
-                    })
-                  }
-                  onMouseLeave={() => setHoveredInfo(null)}
-                  fillOpacity={0.75}
-                  style={{cursor: 'pointer'}}
-                >
-                  {codon.aminoAcid}
-                </text>
-              )}
-              {codon.middle > 2 && zoomLevel > -0.5 && (
-                <text
-                  key={"bb" + j}
-                  x={codon.middle * sep}
-                  y={y - 1}
-                  textAnchor="middle"
-                  fontSize="7"
-                  fillOpacity={0.4}
-                  //fontWeight="bold"
-                >
-                  {codon.codonIndex + 1}
-                </text>
-              )}
-            </>
+            <path
+              key={`block-${j}`}
+              d={`${
+                feature.strand < 0
+                  ? // Reverse
+                    `M ${blockX2} ${y}
+                    ${
+                      block.startIsActual
+                        ? `L ${blockX1 + SHARP_POINT_OFFSET} ${y}
+                           L ${blockX1} ${y + 5}
+                           L ${blockX1 + SHARP_POINT_OFFSET} ${y + 10}`
+                        : `L ${blockX1 + BLUNT_POINT_OFFSET} ${y}
+                           L ${blockX1} ${y + 5}
+                           L ${blockX1 + BLUNT_POINT_OFFSET} ${y + 10}`
+                    }
+                    L ${blockX2} ${y + 10}
+                    L ${blockX2} ${y}
+                    `
+                  : // Forward
+                    `M ${blockX1} ${y}
+                    ${
+                      block.endIsActual
+                        ? `L ${blockX2 - SHARP_POINT_OFFSET} ${y}
+                           L ${blockX2} ${y + 5}
+                           L ${blockX2 - SHARP_POINT_OFFSET} ${y + 10}`
+                        : `L ${blockX2 - BLUNT_POINT_OFFSET} ${y}
+                           L ${blockX2} ${y + 5}
+                           L ${blockX2 - BLUNT_POINT_OFFSET} ${y + 10}`
+                    }
+                    L ${blockX1} ${y + 10}
+                    L ${blockX1} ${y}
+                    `
+              } Z`}
+              fill={getColor(feature, product)}
+              onClick={() => handleFeatureClick(feature)}
+              onMouseEnter={() => {
+                if (zoomLevel < codonZoomThreshold) {
+                  setHoveredInfo({
+                    label: `${feature.name}: ${feature.type}`,
+                    product: altName,
+                    locusTag: feature.notes?.locus_tag || null,
+                  });
+                }
+              }}
+              onMouseLeave={() => {
+                if (zoomLevel < codonZoomThreshold) setHoveredInfo(null);
+              }}
+              style={{ cursor: "pointer" }}
+            />
           );
         })}
+
+        {/* Attempt to place label within the feature's horizontal range */}
+        {(() => {
+          // Let’s say we *try* to place it near the left edge: x just before the feature’s line
+          const desiredX = featureX ;
+          const desiredY = y; 
+          // We now call placeLabel with the feature boundary
+          const placed = placeLabel(
+            desiredX,
+            desiredY,
+            betterName,
+            usedLabelBoxes,
+            20,      // maxTries
+            featureX,
+            featureWidth
+          );
+          if (!placed) {
+            // Could not place the label; skip it
+            return null;
+          }
+          return (
+            <text x={placed.x} y={desiredY} fontSize="10" textAnchor="left">
+              {betterName}
+            </text>
+          );
+        })()}
+
+        {/* Codon-based amino acids */}
+        {feature.codonMap.map((codon, j) => (
+          <g key={j}>
+            {zoomLevel > codonZoomThreshold && (
+              <text
+                x={codon.middle * sep}
+                y={y + 9}
+                textAnchor="middle"
+                fontSize="10"
+                onClick={() => handleFeatureClick(feature)}
+                onMouseOver={() =>
+                  setHoveredInfo({
+                    label: `${betterName}: ${codon.aminoAcid}${codon.codonIndex + 1}`,
+                    product: altName,
+                    locusTag: feature.notes?.locus_tag || null,
+                  })
+                }
+                onMouseLeave={() => setHoveredInfo(null)}
+                fillOpacity={0.75}
+                style={{ cursor: "pointer" }}
+              >
+                {codon.aminoAcid}
+              </text>
+            )}
+            {codon.middle > 2 && zoomLevel > -0.5 && (
+              <text
+                x={codon.middle * sep}
+                y={y - 1}
+                textAnchor="middle"
+                fontSize="7"
+                fillOpacity={0.4}
+              >
+                {codon.codonIndex + 1}
+              </text>
+            )}
+          </g>
+        ))}
+
+        {/* (Optional) lines for codon boundaries */}
         {zoomLevel > -2 &&
           feature.codonMap.map((codon, j) => {
-            // create a line either side of the codon
-
+            const codonPad = 15 * zoomFactor;
             return (
-              <g key={j}>
+              <g key={`codonline-${j}`}>
                 {codon.middle > 1 && codon.middle < 3 && (
                   <line
                     x1={codon.middle * sep - codonPad}
@@ -475,15 +552,11 @@ const SingleRow = ({
     );
   });
 
-  // create a tick specifically at searchInput
+  // Search tick
   let searchTick = null;
-  if (
-    intSearchInput != null &&
-    intSearchInput >= rowStart &&
-    intSearchInput <= rowEnd
-  ) {
+  if (intSearchInput != null && intSearchInput >= rowStart && intSearchInput <= rowEnd) {
     searchTick = (
-      <g key={-1}>
+      <g key="search-tick">
         <line
           x1={(intSearchInput - rowStart) * sep}
           y1={0}
@@ -491,9 +564,6 @@ const SingleRow = ({
           y2={10}
           stroke="red"
         />
-        {
-          //rect behind tick
-        }
         <rect
           x={(intSearchInput - rowStart) * sep - 30}
           y={0}
@@ -514,18 +584,12 @@ const SingleRow = ({
     );
   }
 
+  // Selection rectangle
   let selectionRect = null;
-  let selTempStart = null;
-  let selTempEnd = null;
-  //console.log(whereMouseWentDown, whereMouseWentUp, whereMouseCurrentlyIs);
-
   if (whereMouseWentDown != null) {
-    const alternative =
-      whereMouseWentUp != null ? whereMouseWentUp : whereMouseCurrentlyIs;
-
+    const alternative = whereMouseWentUp != null ? whereMouseWentUp : whereMouseCurrentlyIs;
     const rectStart = Math.min(whereMouseWentDown, alternative);
     const rectEnd = Math.max(whereMouseWentDown, alternative);
-    //console.log(rectStart, rectEnd);
     selectionRect = (
       <rect
         x={extraPadding + (rectStart - rowStart - 0.5) * sep}
@@ -538,42 +602,31 @@ const SingleRow = ({
     );
   }
 
+  // Sequence hits
   let sequenceHitRects = null;
-
-  if(sequenceHits.length > 0){
-    sequenceHitRects = [];
-    for(let i = 0; i < sequenceHits.length; i++){
-      const hit = sequenceHits[i];
+  if (sequenceHits.length > 0) {
+    sequenceHitRects = sequenceHits.map((hit, i) => {
       let [start, end] = hit;
-      // if the hit is outside the current view, skip it
-      if(start > rowEnd || end < rowStart){
-        continue;
+      if (end < rowStart || start > rowEnd) {
+        return null;
       }
-      // if the hit is partially outside the current view, clip it
-      if(start < rowStart){
-        start = rowStart;
-      }
-      if(end > rowEnd){
-        end = rowEnd;
-      }
-      sequenceHitRects.push(
+      if (start < rowStart) start = rowStart;
+      if (end > rowEnd) end = rowEnd;
+
+      return (
         <rect
+          key={`hit-${i}`}
           x={extraPadding + (start - rowStart - 0.5) * sep}
           y={0}
           width={(end - start) * sep}
           height={height}
-          fill={i==curSeqHitIndex? "#ff8888":"#ffbbbb"}
+          fill={i === curSeqHitIndex ? "#ff8888" : "#ffbbbb"}
           fillOpacity={0.5}
         />
       );
-    }
+    });
   }
 
-            
-
-
-
-  // Concatenate sequence characters and ticks with SVG
   return (
     <div
       style={{
@@ -582,43 +635,28 @@ const SingleRow = ({
         ...(isSelected ? { backgroundColor: "#ffffee" } : {}),
       }}
       onMouseDown={(e) => {
-        // if right mouse button, don't do anything
-        if (e.button == 2) {
-          return;
-        }
-        // figure out which nucleotide was clicked
+        if (e.button === 2) return;
         const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
-        const nucleotide =
-          Math.floor((x - extraPadding) / sep + 0.5) + rowStart;
+        const nucleotide = Math.floor((x - extraPadding) / sep + 0.5) + rowStart;
         setWhereMouseWentDown(nucleotide);
         setWhereMouseWentUp(null);
         e.preventDefault();
       }}
       onMouseUp={(e) => {
-        // if right mouse button, don't do anything
-        if (e.button == 2) {
-          return;
-        }
-        // figure out which nucleotide was clicked
+        if (e.button === 2) return;
         const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
-        const nucleotide =
-          Math.floor((x - extraPadding) / sep + 0.5) + rowStart;
+        const nucleotide = Math.floor((x - extraPadding) / sep + 0.5) + rowStart;
         if (Math.abs(nucleotide - whereMouseWentDown) <= 1) {
-          // if the mouse didn't move, then this is a click
-
           setWhereMouseWentDown(null);
           setWhereMouseWentUp(null);
         } else {
-          // otherwise, this is a drag
           setWhereMouseWentUp(nucleotide);
           e.preventDefault();
         }
       }}
       onMouseMove={(e) => {
-        // figure out which nucleotide was clicked
         const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
-        const nucleotide =
-          Math.floor((x - extraPadding) / sep + 0.5) + rowStart;
+        const nucleotide = Math.floor((x - extraPadding) / sep + 0.5) + rowStart;
         setWhereMouseCurrentlyIs(nucleotide);
       }}
       id={`row-${rowId}`}
@@ -629,45 +667,45 @@ const SingleRow = ({
         style={{ position: "absolute", top: 0, left: 0 }}
       >
         {selectionRect}
-        <g>
-          {sequenceHitRects}
-        </g>
+        <g>{sequenceHitRects}</g>
+
+        {/* Ticks */}
         <g fillOpacity={0.7}>
-        <g transform={enableRC ? `translate(0,20)` : ""}>
-        
-          <g
-            transform={`translate(${extraPadding}, ${height - 40})`}
-            style={{ zIndex: -5 }}
-          >
-            {ticks}
-          </g>
-          {searchTick && (
-            <g transform={`translate(${extraPadding}, ${height - 40})`}>
-              {searchTick}
+          <g transform={enableRC ? `translate(0,20)` : ""}>
+            <g transform={`translate(${extraPadding}, ${height - 40})`} style={{ zIndex: -5 }}>
+              {ticks}
             </g>
-          )}
-          {
-            // line above ticks
-          }
-          
+            {searchTick && (
+              <g transform={`translate(${extraPadding}, ${height - 40})`}>
+                {searchTick}
+              </g>
+            )}
+          </g>
         </g>
-        </g>
+
+        {/* Baseline */}
         <line
-            x1={0 + extraPadding}
-            y1={height - 40}
-            x2={width + extraPadding + 0}
-            y2={height - 40}
-            stroke="black"
-          />
+          x1={extraPadding}
+          y1={height - 40}
+          x2={width + extraPadding}
+          y2={height - 40}
+          stroke="black"
+        />
 
-        <g transform={`translate(${extraPadding}, ${height - 55})`}>{chars}</g>
-        
-        {enableRC &&
-          <g transform={`translate(${extraPadding}, ${height - 55 + 19})`}>{chars2}</g>
+        {/* Forward sequence */}
+        <g transform={`translate(${extraPadding}, ${height - 55})`}>
+          {chars}
+        </g>
 
-        }
+        {/* Reverse complement */}
+        {enableRC && (
+          <g transform={`translate(${extraPadding}, ${height - 55 + 19})`}>
+            {chars2}
+          </g>
+        )}
+
+        {/* Features */}
         <g transform={`translate(${extraPadding}, 5)`}>{featureBlocksSVG}</g>
-       
       </svg>
     </div>
   );
