@@ -73,7 +73,7 @@ function placeLabel(desiredX, y, text, usedBoxes, maxTries, featureX, featureWid
 
   // The label must fit within the feature: from featureX to (featureX + featureWidth - labelWidth).
   const minX = featureX;
-  const maxX = featureX + featureWidth - labelWidth;
+  const maxX = featureX + featureWidth ;
 
   // If the feature is too short to fit the label at all, just give up.
   if (maxX < minX) {
