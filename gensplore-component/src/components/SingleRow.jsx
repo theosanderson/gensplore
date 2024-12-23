@@ -47,26 +47,42 @@ function assignFeatureLanes(featureBlocks) {
 
 /**
  * Helper to detect bounding-box overlap in 2D.
- * Assumes boxes are {left,top,right,bottom} objects.
+ * Assumes boxes are {left, top, right, bottom}.
  */
 function boxesOverlap(a, b) {
   return !(a.left > b.right || a.right < b.left || a.top > b.bottom || a.bottom < b.top);
 }
 
 /**
- * Attempt to place a label so it doesn't overlap previously placed labels.
- * - x,y is the “ideal” top-left anchor in the SVG coordinate space
- * - text is the label string
- * - usedBoxes is an array of bounding boxes already in use
- * - maxTries is how many times to shift right before giving up
- * Returns either {x: newX} if placed, or null if we can't place it.
+ * Attempt to place a label so it doesn't overlap previously placed labels
+ * and doesn't go outside of the feature's horizontal range.
+ *
+ * @param {number} desiredX - The initial x position to try
+ * @param {number} y        - The y position (top)
+ * @param {string} text     - The label string
+ * @param {Array} usedBoxes - List of {left,top,right,bottom} boxes already in use
+ * @param {number} maxTries - Number of times to nudge to the right before giving up
+ * @param {number} featureX - Left boundary of the feature
+ * @param {number} featureWidth - The feature's total width
+ * @return {{x:number} | null} The placed coordinate or null if no fit
  */
-function placeLabel(x, y, text, usedBoxes, maxTries = 10) {
-  const avgCharWidth = 6; // tweak as needed
+function placeLabel(desiredX, y, text, usedBoxes, maxTries, featureX, featureWidth) {
+  const avgCharWidth = 6;  // Tweak as needed
   const labelWidth = text.length * avgCharWidth;
-  const labelHeight = 10; // rough line height
+  const labelHeight = 10; // Rough line height
 
-  let newX = x;
+  // The label must fit within the feature: from featureX to (featureX + featureWidth - labelWidth).
+  const minX = featureX;
+  const maxX = featureX + featureWidth - labelWidth;
+
+  // If the feature is too short to fit the label at all, just give up.
+  if (maxX < minX) {
+    return null;
+  }
+
+  // Clamp initial X to [minX, maxX].
+  //let newX = Math.max(minX, Math.min(desiredX, maxX));
+  let newX = desiredX == 0 ? desiredX -5 : desiredX;
   for (let attempt = 0; attempt < maxTries; attempt++) {
     const box = {
       left: newX,
@@ -75,18 +91,21 @@ function placeLabel(x, y, text, usedBoxes, maxTries = 10) {
       bottom: y + labelHeight,
     };
 
-    // Check overlap with existing boxes
     const overlap = usedBoxes.some((b) => boxesOverlap(box, b));
     if (!overlap) {
-      // Place label here
+      // Found a free spot within the feature bounds
       usedBoxes.push(box);
       return { x: newX };
     }
-    // Otherwise, nudge further right
-    newX += 10;
-  }
 
-  // If we get here, we never found a spot
+    // Nudge to the right
+    newX += 10;
+    // If newX extends beyond the feature boundary, stop and fail.
+    if (newX > maxX) {
+      break;
+    }
+  }
+  // If we get here, no suitable position was found
   return null;
 }
 
@@ -115,6 +134,7 @@ const SingleRow = ({
   const fullSequence = parsedSequence.sequence;
   const rowSequence = fullSequence.slice(rowStart, rowEnd);
 
+  // Filter relevant features
   const relevantFeatures = visibleFeatures.filter(
     (feature) =>
       (feature.start >= rowStart && feature.start <= rowEnd) ||
@@ -130,7 +150,7 @@ const SingleRow = ({
     (intSearchInput >= rowStart && intSearchInput <= rowEnd) ||
     searchFeatures.length > 0;
 
-  // Build featureBlocks
+  // Build feature objects
   const featureBlocks = relevantFeatures.map((feature, i) => {
     const startPos2 = feature.start < rowStart ? 0 : feature.start - rowStart;
     const endPos2 =
@@ -308,6 +328,7 @@ const SingleRow = ({
       );
     });
   }
+
   const rc = { A: "T", T: "A", C: "G", G: "C", N: "N" };
   if (zoomLevel > -1) {
     chars2 = rowSequence.split("").map((char, i) => {
@@ -357,9 +378,11 @@ const SingleRow = ({
   const usedLabelBoxes = [];
 
   const featureBlocksSVG = featureBlocks.map((feature) => {
-    const x = feature.start * sep;
-    const w = (feature.end - feature.start) * sep;
+    // Feature's bounding box in the row
+    const featureX = feature.start * sep;
+    const featureWidth = (feature.end - feature.start) * sep;
     const y = 7 + feature.lane * 20;
+
     const product = feature.notes?.product || "";
     let betterName = feature.type === "mat_peptide" ? product : feature.name;
     const altName = feature.type === "mat_peptide" ? feature.name : product;
@@ -369,120 +392,92 @@ const SingleRow = ({
       <g key={feature.key}>
         {/* Baseline from start to end */}
         <line
-          x1={x + 2}
+          x1={featureX + 2}
           y1={y + 5}
-          x2={x + w - 2}
+          x2={featureX + featureWidth - 2}
           y2={y + 5}
           stroke={getColor(feature, product)}
           strokeWidth={1.5}
         />
-        {/* Feature blocks (sub-locations) */}
-        {feature.blocks.map((block, j) => (
-          <path
-            key={`block-${j}`}
-            d={`${
-              feature.strand < 0
-                ? // Reverse
-                  `M ${block.end * sep + 5 * zoomFactor} ${y}
-                  ${
-                    block.startIsActual
-                      ? `L ${
-                          block.start * sep -
-                          5 * zoomFactor +
-                          SHARP_POINT_OFFSET
-                        } ${y}
-                        L ${
-                          block.start * sep - 5 * zoomFactor
-                        } ${y + 5}
-                        L ${
-                          block.start * sep -
-                          5 * zoomFactor +
-                          SHARP_POINT_OFFSET
-                        } ${y + 10}`
-                      : `L ${
-                          block.start * sep -
-                          5 * zoomFactor +
-                          BLUNT_POINT_OFFSET
-                        } ${y}
-                        L ${
-                          block.start * sep - 5 * zoomFactor
-                        } ${y + 5}
-                        L ${
-                          block.start * sep -
-                          5 * zoomFactor +
-                          BLUNT_POINT_OFFSET
-                        } ${y + 10}`
-                  }
-                  L ${block.end * sep + 5 * zoomFactor} ${y + 10}
-                  L ${block.end * sep + 5 * zoomFactor} ${y}
-                  `
-                : // Forward
-                  `M ${block.start * sep - 5 * zoomFactor} ${y}
-                  ${
-                    block.endIsActual
-                      ? `L ${
-                          block.end * sep +
-                          5 * zoomFactor -
-                          SHARP_POINT_OFFSET
-                        } ${y}
-                        L ${block.end * sep + 5 * zoomFactor} ${y + 5}
-                        L ${
-                          block.end * sep +
-                          5 * zoomFactor -
-                          SHARP_POINT_OFFSET
-                        } ${y + 10}`
-                      : `L ${
-                          block.end * sep +
-                          5 * zoomFactor -
-                          BLUNT_POINT_OFFSET
-                        } ${y}
-                        L ${block.end * sep + 5 * zoomFactor} ${y + 5}
-                        L ${
-                          block.end * sep +
-                          5 * zoomFactor -
-                          BLUNT_POINT_OFFSET
-                        } ${y + 10}`
-                  }
-                  L ${block.start * sep - 5 * zoomFactor} ${y + 10}
-                  L ${block.start * sep - 5 * zoomFactor} ${y}
-                  `
-            } Z`}
-            fill={getColor(feature, product)}
-            onClick={() => handleFeatureClick(feature)}
-            onMouseEnter={() => {
-              if (zoomLevel < codonZoomThreshold) {
-                setHoveredInfo({
-                  label: `${feature.name}: ${feature.type}`,
-                  product: altName,
-                  locusTag:
-                    feature.notes?.locus_tag || null,
-                });
-              }
-            }}
-            onMouseLeave={() => {
-              if (zoomLevel < codonZoomThreshold) setHoveredInfo(null);
-            }}
-            style={{ cursor: "pointer" }}
-          />
-        ))}
 
-        {/* Attempt to place the feature's label text without overlap */}
+        {/* Sub-locations */}
+        {feature.blocks.map((block, j) => {
+          const blockX1 = block.start * sep - 5 * zoomFactor;
+          const blockX2 = block.end * sep + 5 * zoomFactor;
+          return (
+            <path
+              key={`block-${j}`}
+              d={`${
+                feature.strand < 0
+                  ? // Reverse
+                    `M ${blockX2} ${y}
+                    ${
+                      block.startIsActual
+                        ? `L ${blockX1 + SHARP_POINT_OFFSET} ${y}
+                           L ${blockX1} ${y + 5}
+                           L ${blockX1 + SHARP_POINT_OFFSET} ${y + 10}`
+                        : `L ${blockX1 + BLUNT_POINT_OFFSET} ${y}
+                           L ${blockX1} ${y + 5}
+                           L ${blockX1 + BLUNT_POINT_OFFSET} ${y + 10}`
+                    }
+                    L ${blockX2} ${y + 10}
+                    L ${blockX2} ${y}
+                    `
+                  : // Forward
+                    `M ${blockX1} ${y}
+                    ${
+                      block.endIsActual
+                        ? `L ${blockX2 - SHARP_POINT_OFFSET} ${y}
+                           L ${blockX2} ${y + 5}
+                           L ${blockX2 - SHARP_POINT_OFFSET} ${y + 10}`
+                        : `L ${blockX2 - BLUNT_POINT_OFFSET} ${y}
+                           L ${blockX2} ${y + 5}
+                           L ${blockX2 - BLUNT_POINT_OFFSET} ${y + 10}`
+                    }
+                    L ${blockX1} ${y + 10}
+                    L ${blockX1} ${y}
+                    `
+              } Z`}
+              fill={getColor(feature, product)}
+              onClick={() => handleFeatureClick(feature)}
+              onMouseEnter={() => {
+                if (zoomLevel < codonZoomThreshold) {
+                  setHoveredInfo({
+                    label: `${feature.name}: ${feature.type}`,
+                    product: altName,
+                    locusTag: feature.notes?.locus_tag || null,
+                  });
+                }
+              }}
+              onMouseLeave={() => {
+                if (zoomLevel < codonZoomThreshold) setHoveredInfo(null);
+              }}
+              style={{ cursor: "pointer" }}
+            />
+          );
+        })}
+
+        {/* Attempt to place label within the feature's horizontal range */}
         {(() => {
-          // If you prefer to anchor the text slightly to the left of “x”:
-          const desiredX = x==0 ? -5 : x ;
+          // Let’s say we *try* to place it near the left edge: x just before the feature’s line
+          const desiredX = featureX ;
           const desiredY = y; 
-          const placed = placeLabel(desiredX, desiredY, betterName, usedLabelBoxes, 20);
+          // We now call placeLabel with the feature boundary
+          const placed = placeLabel(
+            desiredX,
+            desiredY,
+            betterName,
+            usedLabelBoxes,
+            20,      // maxTries
+            featureX,
+            featureWidth
+          );
           if (!placed) {
-            // If we failed to place, we can either skip, or show partial, etc.
-            return null; // Hide the label
+            // Could not place the label; skip it
+            return null;
           }
           return (
-            <text
-              x={placed.x}
-              y={desiredY}
-              fontSize="10"
-              textAnchor="left"
-            >
+            <text x={placed.x} y={desiredY} fontSize="10" textAnchor="left">
               {betterName}
             </text>
           );
@@ -557,13 +552,9 @@ const SingleRow = ({
     );
   });
 
-  // A tick for intSearchInput if relevant
+  // Search tick
   let searchTick = null;
-  if (
-    intSearchInput != null &&
-    intSearchInput >= rowStart &&
-    intSearchInput <= rowEnd
-  ) {
+  if (intSearchInput != null && intSearchInput >= rowStart && intSearchInput <= rowEnd) {
     searchTick = (
       <g key="search-tick">
         <line
@@ -596,8 +587,7 @@ const SingleRow = ({
   // Selection rectangle
   let selectionRect = null;
   if (whereMouseWentDown != null) {
-    const alternative =
-      whereMouseWentUp != null ? whereMouseWentUp : whereMouseCurrentlyIs;
+    const alternative = whereMouseWentUp != null ? whereMouseWentUp : whereMouseCurrentlyIs;
     const rectStart = Math.min(whereMouseWentDown, alternative);
     const rectEnd = Math.max(whereMouseWentDown, alternative);
     selectionRect = (
@@ -678,6 +668,7 @@ const SingleRow = ({
       >
         {selectionRect}
         <g>{sequenceHitRects}</g>
+
         {/* Ticks */}
         <g fillOpacity={0.7}>
           <g transform={enableRC ? `translate(0,20)` : ""}>
@@ -691,6 +682,7 @@ const SingleRow = ({
             )}
           </g>
         </g>
+
         {/* Baseline */}
         <line
           x1={extraPadding}
@@ -699,16 +691,19 @@ const SingleRow = ({
           y2={height - 40}
           stroke="black"
         />
+
         {/* Forward sequence */}
         <g transform={`translate(${extraPadding}, ${height - 55})`}>
           {chars}
         </g>
+
         {/* Reverse complement */}
         {enableRC && (
           <g transform={`translate(${extraPadding}, ${height - 55 + 19})`}>
             {chars2}
           </g>
         )}
+
         {/* Features */}
         <g transform={`translate(${extraPadding}, 5)`}>{featureBlocksSVG}</g>
       </svg>
