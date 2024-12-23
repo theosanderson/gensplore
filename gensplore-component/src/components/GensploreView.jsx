@@ -441,7 +441,7 @@ if (hit1 === -1) {
   </Dialog>
   
   
-      <div className="w-full p-5">
+      <div className="w-full p-5 pl-0">
         <ToastContainer />
         {true && (
           <div className="fixed top-0 right-0 z-10">
