@@ -85,7 +85,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCal
             genbankObject[0].parsedSequence.sequence.toUpperCase();
           setGenbankData(genbankObject[0]);
           if (setTitleCallback) {
-            setTitleCallback(genbankObject[0].parsedSequence.name + "| Gensplore");
+            setTitleCallback(genbankObject[0].parsedSequence.name + " | Gensplore");
           }
         } catch (error) {
           console.error("Error loading GenBank file:", error);
