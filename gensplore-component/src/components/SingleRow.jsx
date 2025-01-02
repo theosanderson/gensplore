@@ -439,7 +439,7 @@ const SingleRow = ({
                     `
               } Z`}
               fill={getColor(feature, product)}
-              onClick={() => handleFeatureClick(feature)}
+              onMouseDown={() => handleFeatureClick(feature)}
               onMouseEnter={() => {
                 if (zoomLevel < codonZoomThreshold) {
                   setHoveredInfo({
@@ -492,7 +492,7 @@ const SingleRow = ({
                 y={y + 9}
                 textAnchor="middle"
                 fontSize="10"
-                onClick={() => handleFeatureClick(feature)}
+                onMouseDown={() => handleFeatureClick(feature)}
                 onMouseOver={() =>
                   setHoveredInfo({
                     label: `${betterName}: ${codon.aminoAcid}${codon.codonIndex + 1}`,
