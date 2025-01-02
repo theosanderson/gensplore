@@ -22,7 +22,7 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { ToastContainer, toast } from "react-toastify";
 import SearchPanel from "../SearchPanel";
 
-function GensploreView({ genbankString, searchInput, setSearchInput }) {
+function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCallback }) {
     const [searchPanelOpen, setSearchPanelOpen] = useState(false);
     const [zoomLevel, setRawZoomLevel] = useState(0);
     const [whereMouseWentDown, setWhereMouseWentDown] = useState(null);
@@ -84,6 +84,9 @@ function GensploreView({ genbankString, searchInput, setSearchInput }) {
           genbankObject[0].parsedSequence.sequence =
             genbankObject[0].parsedSequence.sequence.toUpperCase();
           setGenbankData(genbankObject[0]);
+          if (setTitleCallback) {
+            setTitleCallback(genbankObject[0].parsedSequence.name);
+          }
         } catch (error) {
           console.error("Error loading GenBank file:", error);
         }

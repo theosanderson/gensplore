@@ -123,6 +123,7 @@ const App = () => {
           searchInput={searchInput}
           setSearchInput={setSearchInput}
           showLogo={true}
+          setTitleCallback={(title) => { document.title = title; }}
         />
       )}
       {!ready && loading && (
