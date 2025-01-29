@@ -646,7 +646,7 @@ const SingleRow = ({
         if (e.button === 2) return;
         const x = e.clientX - e.currentTarget.getBoundingClientRect().left;
         const nucleotide = Math.floor((x - extraPadding) / sep + 0.5) + rowStart;
-        if (Math.abs(nucleotide - whereMouseWentDown) <= 1) {
+        if (Math.abs(nucleotide - whereMouseWentDown) < 1) {
           setWhereMouseWentDown(null);
           setWhereMouseWentUp(null);
         } else {
