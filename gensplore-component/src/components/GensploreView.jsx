@@ -4,9 +4,8 @@ import React, {
     useRef,
     useMemo,
     useLayoutEffect,
-    useCallback,
   } from "react";
-import { FaRegClipboard, FaRegCopy } from "react-icons/fa";
+import { FaRegCopy } from "react-icons/fa";
 import "../App.css"
 import Offcanvas from './Offcanvas';
 import ContextMenu from './ContextMenu';
@@ -21,8 +20,26 @@ import { useMeasure } from "react-use"; // or just 'react-use-measure'
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { ToastContainer, toast } from "react-toastify";
 import SearchPanel from "../SearchPanel";
+import VariantPanel from "./VariantPanel";
+import ClipLoader from "react-spinners/ClipLoader";
+import {
+  diffSequences,
+  mapVariantsToFeatures,
+  DEFAULT_MAX_DIFF_SIZE,
+} from "../utils/comparison";
 
-function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCallback }) {
+function GensploreView({
+    genbankString,
+    searchInput = '',
+    setSearchInput = () => {},
+    setTitleCallback,
+    compareSequence,
+    compareLoading = false,
+    compareError = null,
+    onCompareFile = () => {},
+    onCompareUrl = () => {},
+    onClearCompare = () => {},
+  }) {
     const [searchPanelOpen, setSearchPanelOpen] = useState(false);
     const [zoomLevel, setRawZoomLevel] = useState(0);
     const [whereMouseWentDown, setWhereMouseWentDown] = useState(null);
@@ -38,6 +55,15 @@ function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCal
     const [sequenceHits, setSequenceHits] = useState([]);
     const [curSeqHitIndex, setCurSeqHitIndex] = useState(0);
     const [includeRC, setIncludeRC] = useState(false);
+    const [variantEvents, setVariantEvents] = useState([]);
+    const [variantStats, setVariantStats] = useState(null);
+    const [variantPanelOpen, setVariantPanelOpen] = useState(false);
+    const [activeVariantIndex, setActiveVariantIndex] = useState(0);
+    const [selectedVariantId, setSelectedVariantId] = useState(null);
+    const [compareComputeState, setCompareComputeState] = useState("idle");
+    const [compareComputeError, setCompareComputeError] = useState(null);
+    const [compareModalOpen, setCompareModalOpen] = useState(false);
+    const [compareUrlInput, setCompareUrlInput] = useState("");
   
     // safely convert searchInput to int
     const intSearchInput = searchType === "nuc" ? parseInt(searchInput) : null;
@@ -76,23 +102,35 @@ function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCal
     }, [whereOnPage]);
   
     useEffect(() => {
+      if (!genbankString) {
+        setGenbankData(null);
+        return;
+      }
+
       const loadGenbankString = async () => {
         try {
           const genbankObject = await genbankToJson(genbankString);
-          console.log("GenBank file loaded:", genbankObject);
-          // to uppercase
-          genbankObject[0].parsedSequence.sequence =
-            genbankObject[0].parsedSequence.sequence.toUpperCase();
-          setGenbankData(genbankObject[0]);
+          if (!Array.isArray(genbankObject) || genbankObject.length === 0) {
+            throw new Error("Unable to parse GenBank content");
+          }
+          const parsed = genbankObject[0];
+          if (!parsed?.parsedSequence?.sequence) {
+            throw new Error("GenBank record missing sequence data");
+          }
+          parsed.parsedSequence.sequence = parsed.parsedSequence.sequence.toUpperCase();
+          setGenbankData(parsed);
           if (setTitleCallback) {
-            setTitleCallback(genbankObject[0].parsedSequence.name + " | Gensplore");
+            setTitleCallback(parsed.parsedSequence.name + " | Gensplore");
           }
         } catch (error) {
           console.error("Error loading GenBank file:", error);
+          toast.error("Unable to parse GenBank input. Please verify the file contents.");
+          setGenbankData(null);
         }
       };
+
       loadGenbankString();
-    }, []);
+    }, [genbankString, setTitleCallback]);
   
     // detect ctrl-F and open search panel
     useEffect(() => {
@@ -156,6 +194,43 @@ function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCal
       }
       return rowData;
     }, [fullSequence, rowWidth, sequenceLength]);
+
+    const variantsByRow = useMemo(() => {
+      if (!variantEvents || variantEvents.length === 0 || !rowWidth) {
+        return new Map();
+      }
+
+      const map = new Map();
+      const maxRowIndex = Math.max(rowData.length - 1, 0);
+
+      const pushToRow = (rowIndex, variant) => {
+        if (rowIndex < 0) return;
+        const safeRow = Math.min(rowIndex, maxRowIndex);
+        const existing = map.get(safeRow) || [];
+        existing.push(variant);
+        map.set(safeRow, existing);
+      };
+
+      variantEvents.forEach((variant) => {
+        if (!variant) return;
+
+        if (variant.kind === "insertion") {
+          const rowIndex = Math.floor(variant.zeroBasedRefPos / rowWidth);
+          pushToRow(rowIndex, variant);
+          return;
+        }
+
+        const start = Math.max(0, variant.zeroBasedRefPos);
+        const end = Math.max(start, variant.zeroBasedRefPos + Math.max(variant.length - 1, 0));
+        const startRow = Math.floor(start / rowWidth);
+        const endRow = Math.floor(end / rowWidth);
+        for (let rowIndex = startRow; rowIndex <= endRow; rowIndex += 1) {
+          pushToRow(rowIndex, variant);
+        }
+      });
+
+      return map;
+    }, [variantEvents, rowWidth, rowData.length]);
   
     const parentRef = useRef(null);
     const parentOffsetRef = useRef(0);
@@ -304,7 +379,29 @@ if (hit1 === -1) {
       rowVirtualizer.scrollToIndex(row + 1, { align: "center" });
       setLastSearch(sequenceSearchInput);
     }, [sequenceSearchInput, curSeqHitIndex,includeRC]);
-  
+
+    useEffect(() => {
+      if (!variantEvents || variantEvents.length === 0) {
+        return;
+      }
+      if (activeVariantIndex < 0 || activeVariantIndex >= variantEvents.length) {
+        return;
+      }
+      if (!rowWidth || rowData.length === 0) {
+        return;
+      }
+
+      const targetVariant = variantEvents[activeVariantIndex];
+      if (!targetVariant) {
+        return;
+      }
+      const targetPos = Math.max(targetVariant.zeroBasedRefPos, 0);
+      const row = Math.floor(targetPos / rowWidth);
+      const safeRow = Math.min(Math.max(row, 0), rowData.length - 1);
+      rowVirtualizer.scrollToIndex(safeRow + 1, { align: "center" });
+      setSelectedVariantId(targetVariant.id);
+    }, [activeVariantIndex, variantEvents, rowWidth, rowData.length, rowVirtualizer]);
+
     const [featureOffcanvasOpen, setFeatureOffcanvasOpen] = useState(false);
     const [featureVisibility, setFeatureVisibility] = useState({});
     const visibleFeatures = useMemo(() => {
@@ -335,6 +432,64 @@ if (hit1 === -1) {
     setFeatureVisibility(newFeatureVisibility);
     }, [genbankData]);
 
+
+    useEffect(() => {
+      if (!genbankData?.parsedSequence?.sequence || !compareSequence?.sequence) {
+        setVariantEvents([]);
+        setVariantStats(null);
+        setActiveVariantIndex(0);
+        setSelectedVariantId(null);
+        setCompareComputeState(compareSequence ? "idle" : "inactive");
+        setCompareComputeError(null);
+        return;
+      }
+
+      let cancelled = false;
+      const runComparison = async () => {
+        setCompareComputeState("running");
+        setCompareComputeError(null);
+        try {
+          await new Promise((resolve) => setTimeout(resolve, 0));
+          const { variants, stats } = diffSequences(
+            genbankData.parsedSequence.sequence,
+            compareSequence.sequence
+          );
+          if (cancelled) return;
+          const annotatedVariants = mapVariantsToFeatures(
+            variants,
+            genbankData.parsedSequence.features
+          );
+          setVariantEvents(annotatedVariants);
+          setVariantStats({
+            ...stats,
+            comparisonHeader: compareSequence.header,
+            comparisonLength: compareSequence.length,
+          });
+          setCompareComputeState("completed");
+          if (annotatedVariants.length > 0) {
+            setActiveVariantIndex(0);
+            setSelectedVariantId(annotatedVariants[0].id);
+          } else {
+            setActiveVariantIndex(-1);
+            setSelectedVariantId(null);
+          }
+        } catch (err) {
+          if (cancelled) return;
+          console.error(err);
+          setVariantEvents([]);
+          setVariantStats(null);
+          setCompareComputeState("error");
+          setCompareComputeError(err.message || "Failed to compare sequences");
+        }
+      };
+
+      runComparison();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [genbankData, compareSequence]);
+
   
     // Handle context menu
     const handleContextMenu = (e) => {
@@ -363,6 +518,33 @@ if (hit1 === -1) {
       toast.success(`Copied ${asReverseComplement ? 'reverse complement ' : ''}to clipboard`);
     };
 
+    const handleVariantSelect = (variant) => {
+      if (!variantEvents || variantEvents.length === 0) return;
+      if (!variant) return;
+      const index = variantEvents.findIndex((v) => v.id === variant.id);
+      if (index !== -1) {
+        setActiveVariantIndex(index);
+        setVariantPanelOpen(true);
+      }
+    };
+
+    const navigateVariants = (direction) => {
+      if (!variantEvents || variantEvents.length === 0) return;
+      setVariantPanelOpen(true);
+      setActiveVariantIndex((prev) => {
+        if (prev < 0) {
+          return 0;
+        }
+        if (direction === "next") {
+          return prev >= variantEvents.length - 1 ? 0 : prev + 1;
+        }
+        if (direction === "prev") {
+          return prev <= 0 ? variantEvents.length - 1 : prev - 1;
+        }
+        return prev;
+      });
+    };
+
     const handleCopySelection = () => {
       copySelectedSequence(false);
       handleCloseContextMenu();
@@ -380,13 +562,15 @@ if (hit1 === -1) {
       };
     }, []);
 
+    useEffect(() => {
+      if (!compareModalOpen) {
+        setCompareUrlInput("");
+      }
+    }, [compareModalOpen]);
+
 
   
     //console.log("virtualItems", virtualItems);
-  
-    if (!genbankData) {
-      return <div>Loading...</div>;
-    }
   
     if (!width) {
       return (
@@ -395,7 +579,22 @@ if (hit1 === -1) {
         </div>
       );
     }
-  
+
+    if (!genbankData) {
+      return (
+        <div className="w-full h-full flex items-center justify-center text-gray-600">
+          Awaiting GenBank content…
+        </div>
+      );
+    }
+
+
+    const hasComparison = Boolean(compareSequence?.sequence);
+    const totalVariants = variantEvents.length;
+    const comparisonErrorMessage = compareError || compareComputeError;
+    const isComparisonBusy = compareLoading || compareComputeState === "running";
+    const comparisonIdentity = variantStats?.identity;
+    const comparisonCoverage = variantStats?.coverage;
 
     return (<>
       <div onContextMenu={handleContextMenu}>
@@ -442,10 +641,205 @@ if (hit1 === -1) {
       </div>
     </Dialog.Panel>
   </Dialog>
-  
-  
+
+    <Dialog
+      open={compareModalOpen}
+      onClose={() => setCompareModalOpen(false)}
+      className="fixed inset-0 z-[1200] overflow-y-auto"
+    >
+      <div className="flex min-h-full items-center justify-center px-4 py-6 text-center">
+        <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+        <Dialog.Panel className="relative w-full max-w-xl transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
+          <Dialog.Title className="text-lg font-medium text-gray-900">
+            Load comparison FASTA
+          </Dialog.Title>
+          <p className="mt-1 text-sm text-gray-500">
+            Compare the current genome with a secondary FASTA sequence (≤ {DEFAULT_MAX_DIFF_SIZE.toLocaleString()} bp recommended).
+          </p>
+
+          {compareError && (
+            <div className="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+              {compareError}
+            </div>
+          )}
+
+          <div className="mt-4 space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700">Fetch from URL</label>
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="url"
+                  value={compareUrlInput}
+                  onChange={(e) => setCompareUrlInput(e.target.value)}
+                  placeholder="https://example.com/sequence.fasta"
+                  className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+                <button
+                  className="px-3 py-2 rounded bg-indigo-600 text-white text-sm hover:bg-indigo-700"
+                  onClick={() => {
+                    const trimmed = compareUrlInput.trim();
+                    if (!trimmed) return;
+                    onCompareUrl(trimmed);
+                    setCompareModalOpen(false);
+                  }}
+                >
+                  Load
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700">Upload FASTA file</label>
+              <input
+                type="file"
+                accept=".fa,.fasta,.fna,.txt,.seq"
+                className="mt-2 block w-full text-sm text-gray-600"
+                onChange={(event) => {
+                  const file = event.target.files && event.target.files[0];
+                  if (!file) return;
+                  onCompareFile(file);
+                  setCompareModalOpen(false);
+                  event.target.value = "";
+                }}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                File remains local to this browser session.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-2">
+            <button
+              className="px-3 py-2 rounded border border-gray-300 text-sm text-gray-700 hover:bg-gray-100"
+              onClick={() => setCompareModalOpen(false)}
+            >
+              Close
+            </button>
+          </div>
+        </Dialog.Panel>
+      </div>
+    </Dialog>
+
+
       <div className="w-full p-5 pl-0">
         <ToastContainer />
+        {(!hasComparison && !compareLoading && !comparisonErrorMessage) && (
+          <div className="fixed top-4 left-4 z-20">
+            <button
+              className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700"
+              onClick={() => setCompareModalOpen(true)}
+            >
+              Compare genome
+            </button>
+          </div>
+        )}
+
+        {(hasComparison || compareLoading || comparisonErrorMessage) && (
+          <div className="fixed top-4 left-4 right-4 md:left-8 md:right-auto md:w-96 z-20">
+            <div className="bg-white border border-gray-200 shadow-lg rounded-md px-4 py-3 space-y-2">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">
+                    Comparative mode
+                  </div>
+                  <div className="text-sm font-semibold text-gray-800 break-words">
+                    {compareSequence?.header || "Uploaded FASTA"}
+                  </div>
+                  {compareSequence?.length && (
+                    <div className="text-xs text-gray-500">
+                      {compareSequence.length.toLocaleString()} bp
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2 items-end">
+                  <button
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                    onClick={() => setCompareModalOpen(true)}
+                  >
+                    Replace FASTA
+                  </button>
+                  <button
+                    className="text-xs text-red-500 hover:text-red-600"
+                    onClick={() => {
+                      onClearCompare();
+                      setVariantEvents([]);
+                      setVariantStats(null);
+                      setActiveVariantIndex(-1);
+                      setSelectedVariantId(null);
+                      setCompareComputeState("idle");
+                      setCompareComputeError(null);
+                      setCompareUrlInput("");
+                    }}
+                  >
+                    Clear comparison
+                  </button>
+                </div>
+              </div>
+
+              {isComparisonBusy && (
+                <div className="text-sm text-gray-600 flex items-center gap-2">
+                  <ClipLoader size={16} color="#6b7280" />
+                  Aligning sequences…
+                </div>
+              )}
+
+              {comparisonErrorMessage && !isComparisonBusy && (
+                <div className="text-sm text-red-600">
+                  {comparisonErrorMessage}
+                </div>
+              )}
+
+              {!isComparisonBusy && !comparisonErrorMessage && hasComparison && (
+                <div className="text-sm text-gray-700 space-y-1">
+                  <div>
+                    Identity: {comparisonIdentity != null ? `${(comparisonIdentity * 100).toFixed(2)}%` : "—"}
+                    {comparisonCoverage != null &&
+                      ` · coverage ${(comparisonCoverage * 100).toFixed(2)}%`}
+                  </div>
+                  {totalVariants === 0 && (
+                    <div className="text-xs text-gray-500">No nucleotide differences detected.</div>
+                  )}
+                </div>
+              )}
+
+              {compareSequence?.ambiguousFraction > 0.05 && (
+                <div className="text-xs text-amber-600">
+                  Warning: comparison FASTA contains {(compareSequence.ambiguousFraction * 100).toFixed(1)}% ambiguous bases.
+                </div>
+              )}
+
+              {!isComparisonBusy && !comparisonErrorMessage && totalVariants > 0 && (
+                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                  <button
+                    className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-100"
+                    onClick={() => navigateVariants("prev")}
+                  >
+                    Prev
+                  </button>
+                  <span>
+                    Variant {Math.max(activeVariantIndex, 0) + 1} of {totalVariants}
+                  </span>
+                  <button
+                    className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-100"
+                    onClick={() => navigateVariants("next")}
+                  >
+                    Next
+                  </button>
+                  <button
+                    className="ml-auto px-2 py-1 border border-gray-300 rounded hover:bg-gray-100"
+                    onClick={() => setVariantPanelOpen(true)}
+                  >
+                    Open variant table
+                  </button>
+                </div>
+              )}
+
+              {!hasComparison && compareLoading && (
+                <div className="text-sm text-gray-600">Downloading comparison FASTA…</div>
+              )}
+            </div>
+          </div>
+        )}
         {true && (
           <div className="fixed top-0 right-0 z-10">
             <SearchPanel
@@ -563,6 +957,9 @@ if (hit1 === -1) {
                             sequenceHits={sequenceHits}
                             curSeqHitIndex={curSeqHitIndex}
                             enableRC={enableRC}
+                            variantEvents={variantsByRow.get(virtualitem.index) || []}
+                            highlightedVariantId={selectedVariantId}
+                            onVariantSelect={handleVariantSelect}
                           />
                         </div>
                       );
@@ -651,6 +1048,18 @@ if (hit1 === -1) {
           ))}
         </tbody>
       </table>
+        </Offcanvas>
+      )}
+
+      {variantPanelOpen && (
+        <Offcanvas isOpen={variantPanelOpen} onClose={() => setVariantPanelOpen(false)}>
+          <VariantPanel
+            variants={variantEvents}
+            activeVariantId={selectedVariantId}
+            onSelect={(variant) => handleVariantSelect(variant)}
+            onNavigate={(direction) => navigateVariants(direction)}
+            stats={variantStats}
+          />
         </Offcanvas>
       )}
       </div>

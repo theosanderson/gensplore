@@ -8,6 +8,11 @@ import "@fontsource/open-sans-condensed";
 
 const SHARP_POINT_OFFSET = 6;
 const BLUNT_POINT_OFFSET = 1;
+const VARIANT_COLORS = {
+  snp: "#dc2626",
+  deletion: "#0f766e",
+  insertion: "#2563eb",
+};
 
 var colorHash = new ColorHash({ lightness: [0.75, 0.9, 0.7, 0.8] });
 
@@ -128,6 +133,9 @@ const SingleRow = ({
   curSeqHitIndex,
   enableRC,
   visibleFeatures,
+  variantEvents = [],
+  highlightedVariantId,
+  onVariantSelect,
 }) => {
   const zoomFactor = 2 ** zoomLevel;
   const sep = 10 * zoomFactor;
@@ -627,6 +635,99 @@ const SingleRow = ({
     });
   }
 
+  const variantHighlightRects = [];
+  const variantMarkers = [];
+  const deletionStrikethroughs = [];
+
+  variantEvents.forEach((variant) => {
+    if (!variant) return;
+    const color = VARIANT_COLORS[variant.kind] || "#1f2937";
+    const isHighlighted = highlightedVariantId === variant.id;
+
+    if (variant.kind === "insertion") {
+      const offset = variant.zeroBasedRefPos - rowStart;
+      const clampedOffset = Math.min(
+        Math.max(offset, 0),
+        rowEnd - rowStart
+      );
+      if (offset < -1 || offset > rowEnd - rowStart + 1) {
+        return;
+      }
+      const markerX = extraPadding + clampedOffset * sep;
+      variantMarkers.push(
+        <g
+          key={`variant-marker-${variant.id}`}
+          transform={`translate(${markerX}, ${height - 48})`}
+          onClick={() => onVariantSelect && onVariantSelect(variant)}
+          style={{ cursor: "pointer" }}
+        >
+          <polygon
+            points="0,0 6,-10 -6,-10"
+            fill={color}
+            fillOpacity={isHighlighted ? 0.95 : 0.7}
+          />
+          <circle r={isHighlighted ? 4 : 3} fill={color} cy={-10} />
+        </g>
+      );
+      return;
+    }
+
+    const variantStart = variant.zeroBasedRefPos;
+    const variantEnd = variant.zeroBasedRefPos + variant.length - 1;
+    if (variantEnd < rowStart || variantStart > rowEnd) {
+      return;
+    }
+
+    const clampedStart = Math.max(variantStart, rowStart);
+    const clampedEnd = Math.min(variantEnd, rowEnd);
+    const regionStartPx = extraPadding + (clampedStart - rowStart) * sep;
+    const regionWidth = Math.max((clampedEnd - clampedStart + 1) * sep, 2);
+
+    variantHighlightRects.push(
+      <rect
+        key={`variant-highlight-${variant.id}`}
+        x={regionStartPx}
+        y={4}
+        width={regionWidth}
+        height={height - 52}
+        fill={color}
+        fillOpacity={isHighlighted ? 0.2 : 0.1}
+        stroke={isHighlighted ? color : "none"}
+        strokeWidth={isHighlighted ? 1 : 0}
+        rx={2}
+        onClick={() => onVariantSelect && onVariantSelect(variant)}
+        style={{ cursor: "pointer" }}
+      />
+    );
+
+    if (variant.kind === "deletion") {
+      for (let pos = clampedStart; pos <= clampedEnd; pos += 1) {
+        deletionStrikethroughs.push({
+          centerIndex: pos - rowStart,
+          color,
+          isHighlighted,
+        });
+      }
+    }
+
+    const markerX = extraPadding + ((clampedStart - rowStart) + 0.5) * sep;
+    variantMarkers.push(
+      <g
+        key={`variant-marker-${variant.id}`}
+        transform={`translate(${markerX}, ${height - 48})`}
+        onClick={() => onVariantSelect && onVariantSelect(variant)}
+        style={{ cursor: "pointer" }}
+      >
+        <polygon
+          points="0,0 5,-9 -5,-9"
+          fill={color}
+          fillOpacity={isHighlighted ? 0.95 : 0.7}
+        />
+        <circle r={isHighlighted ? 4 : 3} fill={color} cy={-9} />
+      </g>
+    );
+  });
+
   return (
     <div
       style={{
@@ -668,6 +769,7 @@ const SingleRow = ({
       >
         {selectionRect}
         <g>{sequenceHitRects}</g>
+        <g>{variantHighlightRects}</g>
 
         {/* Ticks */}
         <g fillOpacity={0.7}>
@@ -695,6 +797,19 @@ const SingleRow = ({
         {/* Forward sequence */}
         <g transform={`translate(${extraPadding}, ${height - 55})`}>
           {chars}
+          {deletionStrikethroughs.map((strike, idx) => (
+            <line
+              key={`strike-${idx}`}
+              x1={strike.centerIndex * sep - sep * 0.45}
+              x2={strike.centerIndex * sep + sep * 0.45}
+              y1={5.5}
+              y2={5.5}
+              stroke={strike.color}
+              strokeWidth={strike.isHighlighted ? 2.5 : 1.5}
+              strokeLinecap="round"
+              opacity={strike.isHighlighted ? 0.9 : 0.7}
+            />
+          ))}
         </g>
 
         {/* Reverse complement */}
@@ -706,6 +821,7 @@ const SingleRow = ({
 
         {/* Features */}
         <g transform={`translate(${extraPadding}, 5)`}>{featureBlocksSVG}</g>
+        <g>{variantMarkers}</g>
       </svg>
     </div>
   );
