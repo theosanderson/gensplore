@@ -8,7 +8,7 @@ import React, {
 import "./App.css";
 import ClipLoader from "react-spinners/ClipLoader";
 
-import GensploreView from "gensplore";
+import GensploreView, { parseFasta } from "gensplore";
 import { useDebounce, useQueryState } from "./hooks";
 import "react-toastify/dist/ReactToastify.css";
 import { GiDna1 } from "react-icons/gi";
@@ -36,9 +36,15 @@ const App = () => {
   // option to either load from URL or upload a file
   const [genbankString, setGenbankString] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [compareSource, setCompareSource] = useState(null);
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [compareError, setCompareError] = useState(null);
   const loadFromUrl = async (url) => {
     setGenbankString(null);
     setLoading(true);
+    setCompareSource(null);
+    setCompareError(null);
+    setCompareLoading(false);
     const response = await fetch(url);
     // check for errors
     if (!response.ok) {
@@ -59,11 +65,15 @@ const App = () => {
 
     setGenbankString(text);
     setLoaded(true);
+    setCompareSource(null);
+    setCompareError(null);
+    setCompareUrlParam(null);
   };
 
   const [gbUrl, setGbUrl] = useQueryState("gb");
   const [loaded, setLoaded] = useQueryState("loaded");
   const [searchInput, setSearchInput] = useQueryState("search");
+  const [compareUrlParam, setCompareUrlParam] = useQueryState("compare");
 
   useEffect(() => {
     if (gbUrl) {
@@ -88,6 +98,41 @@ const App = () => {
   };
 
   const [genbankResults, setGenbankResults] = useState(null);
+
+  const requestCompareFromUrl = (url) => {
+    const trimmed = (url || "").trim();
+    if (!trimmed) return;
+    setCompareSource(null);
+    setCompareError(null);
+    setCompareUrlParam(trimmed);
+  };
+
+  const loadCompareFromFile = async (file) => {
+    if (!file) return;
+    setCompareLoading(true);
+    setCompareError(null);
+    try {
+      const text = await file.text();
+      const parsed = parseFasta(text);
+      setCompareSource({
+        ...parsed,
+        source: { type: "upload", name: file.name },
+      });
+      setCompareUrlParam(null);
+    } catch (err) {
+      setCompareSource(null);
+      setCompareError(err.message || "Unable to parse comparison FASTA");
+    } finally {
+      setCompareLoading(false);
+    }
+  };
+
+  const clearCompare = () => {
+    setCompareSource(null);
+    setCompareError(null);
+    setCompareUrlParam(null);
+    setCompareLoading(false);
+  };
 
   const doGenBankSearch = async (searchTerm) => {
     let query =
@@ -114,6 +159,48 @@ const App = () => {
     }
   }, [debouncedId]);
 
+  useEffect(() => {
+    if (!compareUrlParam) {
+      return;
+    }
+    let cancelled = false;
+    const controller = new AbortController();
+
+    const fetchCompare = async () => {
+      setCompareLoading(true);
+      setCompareError(null);
+      setCompareSource(null);
+      try {
+        const response = await fetch(compareUrlParam, { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`Unable to fetch FASTA (HTTP ${response.status})`);
+        }
+        const text = await response.text();
+        if (cancelled) return;
+        const parsed = parseFasta(text);
+        setCompareSource({
+          ...parsed,
+          source: { type: "url", value: compareUrlParam },
+        });
+      } catch (err) {
+        if (cancelled) return;
+        setCompareError(err.message || "Unable to download comparison FASTA");
+        setCompareSource(null);
+      } finally {
+        if (!cancelled) {
+          setCompareLoading(false);
+        }
+      }
+    };
+
+    fetchCompare();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [compareUrlParam]);
+
   // create UI for loading from URL or file
   return (
     <>
@@ -124,6 +211,12 @@ const App = () => {
           setSearchInput={setSearchInput}
           showLogo={true}
           setTitleCallback={(title) => { document.title = title; }}
+          compareSequence={compareSource}
+          compareLoading={compareLoading}
+          compareError={compareError}
+          onCompareFile={loadCompareFromFile}
+          onCompareUrl={requestCompareFromUrl}
+          onClearCompare={clearCompare}
         />
       )}
       {!ready && loading && (
