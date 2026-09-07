@@ -90,9 +90,19 @@ export function compareProtein(reference, feature, differences) {
   };
   try {
     if (refPeptide && altPeptide) {
-      changes = align(refPeptide, altPeptide).differences.map(d => makeChange({ ...d,
-        type: d.type === 'Ambiguous' ? /X/.test(d.reference + d.alternative) ? 'Ambiguous' : 'Substitution' : d.type,
-      }));
+      const grouped = [];
+      for (const difference of align(refPeptide, altPeptide).differences) {
+        const change = { ...difference,
+          type: difference.type === 'Ambiguous' ? /X/.test(difference.reference + difference.alternative) ? 'Ambiguous' : 'Substitution' : difference.type,
+        };
+        const previous = grouped.at(-1);
+        if (change.type === 'Ambiguous' && previous?.type === 'Ambiguous' && previous.end === change.start) {
+          previous.end = change.end;
+          previous.reference += change.reference;
+          previous.alternative += change.alternative;
+        } else grouped.push(change);
+      }
+      changes = grouped.map(makeChange);
     } else if (refPeptide || altPeptide) {
       changes = [makeChange({ type: refPeptide ? 'Deletion' : 'Insertion', start: 0, end: refPeptide.length, reference: refPeptide, alternative: altPeptide })];
     }

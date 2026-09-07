@@ -29,3 +29,18 @@ test('ambiguous stretches replace each coding base without changing coding lengt
     assert.equal(result.changes[0].alternative, 'X');
   }
 });
+
+test('consecutive uncovered amino acids form one coverage gap on either strand', async () => {
+  const { compareProtein } = await import('./proteins.mjs');
+  const reference = 'ATGAAAGGGCCCTAA';
+  const { differences } = compareAligned(reference, { sequence: 'ATGNNNNNNNNNTAA' });
+  for (const strand of [1, -1]) {
+    const result = compareProtein(reference, { type: 'CDS', start: 0, end: 14, strand }, differences);
+    assert.equal(result.warning, undefined);
+    assert.equal(result.changes.length, 1);
+    assert.equal(result.changes[0].type, 'Ambiguous');
+    assert.equal(result.changes[0].start, 1);
+    assert.equal(result.changes[0].end, 4);
+    assert.equal(result.changes[0].alternative, 'XXX');
+  }
+});
