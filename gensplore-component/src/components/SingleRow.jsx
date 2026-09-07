@@ -1,4 +1,5 @@
 import ColorHash from "color-hash";
+import { featureLocations, clipFeatureLocations, proteinChangeRowPosition } from "../comparison/rowGeometry.mjs";
 import { getReverseComplement, filterFeatures } from "../utils";
 import getColor from "../utils/getColor";
 import codonToAminoAcid from "../utils/codonMapping";
@@ -138,7 +139,7 @@ const SingleRow = ({
 
   // Filter relevant features
   const relevantFeatures = visibleFeatures.filter(feature =>
-    (feature.locations?.length ? feature.locations : [{ start: feature.start, end: feature.end }])
+    featureLocations(feature, fullSequence.length)
       .some(location => location.start < rowEnd && location.end >= rowStart)
   );
 
@@ -154,42 +155,8 @@ const SingleRow = ({
   const featureBlocks = relevantFeatures.map((feature, i) => {
     const protein = proteins?.[parsedSequence.features.indexOf(feature)];
 
-    const locations = feature.locations
-      ? feature.locations
-      : [
-          {
-            start: feature.start,
-            end: feature.end,
-          },
-        ];
-
-    const blocks = locations
-      .filter(
-        (loc) =>
-          (loc.start >= rowStart && loc.start <= rowEnd) ||
-          (loc.end >= rowStart && loc.end <= rowEnd) ||
-          (loc.start <= rowStart && loc.end >= rowEnd)
-      )
-      .map((loc) => {
-        let startIsActual = true;
-        let endIsActual = true;
-        let s = loc.start;
-        let e = loc.end;
-        if (s < rowStart) {
-          s = rowStart;
-          startIsActual = false;
-        }
-        if (e > rowEnd) {
-          e = rowEnd;
-          endIsActual = false;
-        }
-        return {
-          start: s - rowStart,
-          end: e - rowStart,
-          startIsActual,
-          endIsActual,
-        };
-      });
+    const locations = featureLocations(feature, fullSequence.length);
+    const blocks = clipFeatureLocations(locations, rowStart, rowEnd);
 
     // For translations
     const seqLength = locations.reduce(
@@ -321,7 +288,10 @@ const SingleRow = ({
   // also share label occupancy, preventing labels from colliding at their edges.
   const proteinLaneEnds = Array.from({ length: laneCount }, () => []);
   featureBlocks.forEach(feature => {
-    feature.proteinLabels = feature.proteinChanges.filter(change => change.anchor >= rowStart && change.anchor < rowEnd)
+    feature.proteinLabels = feature.proteinChanges.filter(change => {
+      const position = proteinChangeRowPosition(change, feature.locations, fullSequence.length);
+      return position >= rowStart && position < rowEnd;
+    })
       .sort((a, b) => a.anchor - b.anchor).map(change => {
         const residue = change.end > change.start + 1 ? `${change.start + 1}–${change.end}` : change.start + 1;
         const text = change.type === 'Insertion' ? `AA INS +${change.alternative} · after ${change.aaPosition}`

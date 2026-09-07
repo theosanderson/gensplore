@@ -69,3 +69,10 @@ test('stop and ambiguous codons remain explicit', () => {
   assert.equal(ambiguous.changes[0].type, 'Ambiguous');
   assert.equal(ambiguous.changes[0].alternative, 'X');
 });
+
+test('origin-spanning feature endpoints work without explicit joined locations', () => {
+  const result = compare('GCTTAACCCATG', 'GTTTAACCCATG', { start: 9, end: 5 });
+  assert.equal(result.codons.map(c => c.aminoAcid).join(''), 'MA*');
+  assert.equal(result.changes[0].aaPosition, 2);
+  assert.equal(result.changes[0].anchor, 1);
+});

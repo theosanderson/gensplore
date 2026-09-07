@@ -1,5 +1,6 @@
 import codonToAminoAcid from './codonMapping.mjs';
 import { align } from './align.mjs';
+import { featureLocations } from './rowGeometry.mjs';
 
 const complement = { A: 'T', T: 'A', C: 'G', G: 'C', R: 'Y', Y: 'R', S: 'S', W: 'W', K: 'M', M: 'K', B: 'V', V: 'B', D: 'H', H: 'D', N: 'N' };
 const reverseComplement = sequence => [...sequence].reverse().map(base => complement[base] || 'N').join('');
@@ -17,7 +18,7 @@ const qualifier = (feature, name, fallback) => {
 // protein-function inference. Unsupported translation annotations are explicit.
 export function compareProtein(reference, feature, differences) {
   if (!['CDS', 'mat_peptide'].includes(feature.type)) return null;
-  const locations = feature.locations?.length ? feature.locations : [{ start: feature.start, end: feature.end }];
+  const locations = featureLocations(feature, reference.length);
   const positions = [];
   for (const location of locations) {
     if (!Number.isInteger(location.start) || !Number.isInteger(location.end) || location.start < 0 || location.end >= reference.length || location.end < location.start) {
