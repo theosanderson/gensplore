@@ -25,6 +25,15 @@ jobs:
           npm install --global corepack@0.36.0
           corepack enable
           yarn --version
+      - name: Verify npm authentication
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::error::Set the NPM_TOKEN repository secret to an npm token with publish access to gensplore."
+            exit 1
+          fi
+          npm whoami --registry=https://registry.npmjs.org
       - run: yarn install --immutable
       - run: yarn test
       - name: Set the release version

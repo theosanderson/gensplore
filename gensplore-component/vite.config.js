@@ -23,6 +23,7 @@ export default defineConfig({
   resolve: { alias: { events: require.resolve("events/") } },
   worker: { format: "es" },
   build: {
+    copyPublicDir: false,
     lib: {
       entry: "src/index.js",
       formats: ["es", "cjs"],
