@@ -83,6 +83,8 @@ function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCal
       let cancelled = false;
       setGenbankData(null);
       setComparison(null);
+      setSequenceHits([]);
+      setCurSeqHitIndex(0);
       const loadGenbankString = async () => {
         try {
           const genbankObject = await genbankToJson(genbankString);
@@ -276,7 +278,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCal
   
   
     useEffect(() => {
-      if(!sequenceSearchInput) {
+      if (!fullSequence || !sequenceSearchInput) {
         setSequenceHits([]);
         return;
       }
@@ -318,11 +320,13 @@ if (hit1 === -1) {
          return
      }
   
-      const row = Math.floor(seqHits[curSeqHitIndex][0] / rowWidth);
+      const hitIndex = Math.min(curSeqHitIndex, seqHits.length - 1);
+      if (hitIndex !== curSeqHitIndex) setCurSeqHitIndex(hitIndex);
+      const row = Math.floor(seqHits[hitIndex][0] / rowWidth);
       console.log("row", row);
       rowVirtualizer.scrollToIndex(row + 1, { align: "center" });
       setLastSearch(sequenceSearchInput);
-    }, [sequenceSearchInput, curSeqHitIndex,includeRC]);
+    }, [sequenceSearchInput, curSeqHitIndex, includeRC, fullSequence]);
   
     const [featureOffcanvasOpen, setFeatureOffcanvasOpen] = useState(false);
     const [featureVisibility, setFeatureVisibility] = useState({});

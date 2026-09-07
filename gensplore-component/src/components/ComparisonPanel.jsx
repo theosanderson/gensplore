@@ -14,7 +14,18 @@ export default function ComparisonPanel({ reference, features, fastaUrl, onResul
   useEffect(() => { onStatus({ busy, error }); }, [busy, error, onStatus]);
   useEffect(() => { if (error) setOpen(true); }, [error, setOpen]);
   const clear = () => { setResult(null); onResult(null); setError(''); };
-  useEffect(() => { setUrl(fastaUrl || ''); setSource(fastaUrl || ''); }, [fastaUrl]);
+  useEffect(() => {
+    setUrl(fastaUrl || '');
+    setSource(fastaUrl || '');
+    if (!fastaUrl) {
+      generation.current++;
+      setFasta(null);
+      setResult(null);
+      onResult(null);
+      setError('');
+      setBusy(false);
+    }
+  }, [fastaUrl, onResult]);
   useEffect(() => {
     if (!source) return;
     const controller = new AbortController();
@@ -38,14 +49,20 @@ export default function ComparisonPanel({ reference, features, fastaUrl, onResul
     clear();
     setBusy(true);
     const worker = new AlignmentWorker();
+    const id = generation.current;
+    let cancelled = false;
     worker.onmessage = ({ data }) => {
+      if (cancelled || id !== generation.current) return;
       setBusy(false);
       if (data.error) setError(data.error);
       else { setResult(data); onResult(data); }
     };
-    worker.onerror = () => { setError('Alignment failed. Please try another FASTA.'); setBusy(false); };
+    worker.onerror = () => {
+      if (cancelled || id !== generation.current) return;
+      setError('Alignment failed. Please try another FASTA.'); setBusy(false);
+    };
     worker.postMessage({ reference, features, fasta });
-    return () => worker.terminate();
+    return () => { cancelled = true; worker.terminate(); };
   }, [reference, features, fasta, onResult]);
   const loadFile = async (file) => {
     if (!file) return;
