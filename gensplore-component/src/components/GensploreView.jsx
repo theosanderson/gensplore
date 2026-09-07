@@ -11,6 +11,7 @@ import "../App.css"
 import Offcanvas from './Offcanvas';
 import ContextMenu from './ContextMenu';
 
+import ComparisonPanel from "./ComparisonPanel";
 import Tooltip from "./Tooltip";
 import { getReverseComplement, filterFeatures } from "../utils";
 import SingleRow from "./SingleRow";
@@ -22,7 +23,10 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { ToastContainer, toast } from "react-toastify";
 import SearchPanel from "../SearchPanel";
 
-function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCallback }) {
+function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCallback, fastaUrl }) {
+    const [comparison, setComparison] = useState(null);
+    const [comparisonPanelOpen, setComparisonPanelOpen] = useState(false);
+    const [comparisonStatus, setComparisonStatus] = useState({ busy: false, error: "" });
     const [searchPanelOpen, setSearchPanelOpen] = useState(false);
     const [zoomLevel, setRawZoomLevel] = useState(0);
     const [whereMouseWentDown, setWhereMouseWentDown] = useState(null);
@@ -76,23 +80,34 @@ function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCal
     }, [whereOnPage]);
   
     useEffect(() => {
+      let cancelled = false;
+      setGenbankData(null);
+      setComparison(null);
+      setSequenceHits([]);
+      setCurSeqHitIndex(0);
       const loadGenbankString = async () => {
         try {
           const genbankObject = await genbankToJson(genbankString);
-          console.log("GenBank file loaded:", genbankObject);
+          if (cancelled) return;
           // to uppercase
           genbankObject[0].parsedSequence.sequence =
             genbankObject[0].parsedSequence.sequence.toUpperCase();
           setGenbankData(genbankObject[0]);
-          if (setTitleCallback) {
-            setTitleCallback(genbankObject[0].parsedSequence.name + " | Gensplore");
-          }
         } catch (error) {
           console.error("Error loading GenBank file:", error);
         }
       };
       loadGenbankString();
-    }, []);
+      return () => { cancelled = true; };
+    }, [genbankString]);
+
+    useEffect(() => {
+      const referenceName = genbankData?.parsedSequence.name;
+      if (!referenceName || !setTitleCallback) return;
+      setTitleCallback(comparison
+        ? `${comparison.name} vs ${referenceName} | Gensplore`
+        : `${referenceName} | Gensplore`);
+    }, [genbankData, comparison, setTitleCallback]);
   
     // detect ctrl-F and open search panel
     useEffect(() => {
@@ -158,16 +173,22 @@ function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCal
     }, [fullSequence, rowWidth, sequenceLength]);
   
     const parentRef = useRef(null);
-    const parentOffsetRef = useRef(0);
+    const [parentOffset, setParentOffset] = useState(0);
   
     useLayoutEffect(() => {
-      parentOffsetRef.current = parentRef.current?.offsetTop ?? 0;
-    }, []);
+      const element = parentRef.current;
+      if (!element) return;
+      const updateOffset = () => setParentOffset(element.getBoundingClientRect().top + window.scrollY);
+      updateOffset();
+      const observer = new ResizeObserver(updateOffset);
+      observer.observe(element.parentElement);
+      return () => observer.disconnect();
+    }, [genbankData, width]);
   
     const rowVirtualizer = useWindowVirtualizer({
       count: rowData.length,
       estimateSize: () => 90,
-      scrollMargin: parentOffsetRef.current,
+      scrollMargin: parentOffset,
     });
   
     const virtualItems = rowVirtualizer.getVirtualItems();
@@ -257,7 +278,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCal
   
   
     useEffect(() => {
-      if(!sequenceSearchInput) {
+      if (!fullSequence || !sequenceSearchInput) {
         setSequenceHits([]);
         return;
       }
@@ -299,11 +320,13 @@ if (hit1 === -1) {
          return
      }
   
-      const row = Math.floor(seqHits[curSeqHitIndex][0] / rowWidth);
+      const hitIndex = Math.min(curSeqHitIndex, seqHits.length - 1);
+      if (hitIndex !== curSeqHitIndex) setCurSeqHitIndex(hitIndex);
+      const row = Math.floor(seqHits[hitIndex][0] / rowWidth);
       console.log("row", row);
       rowVirtualizer.scrollToIndex(row + 1, { align: "center" });
       setLastSearch(sequenceSearchInput);
-    }, [sequenceSearchInput, curSeqHitIndex,includeRC]);
+    }, [sequenceSearchInput, curSeqHitIndex, includeRC, fullSequence]);
   
     const [featureOffcanvasOpen, setFeatureOffcanvasOpen] = useState(false);
     const [featureVisibility, setFeatureVisibility] = useState({});
@@ -464,9 +487,11 @@ if (hit1 === -1) {
           </div>
         )}
   
-        <div className="fixed bottom-0 right-0 z-10 w-72 h-12 p-2 rounded shadow bg-white">
+        <div className="fixed bottom-0 right-0 z-10 p-2 rounded shadow bg-white comparison-toolbar">
           <SettingsPanel zoomLevel={zoomLevel} setZoomLevel={setZoomLevel} configModalOpen={configModalOpen} setConfigModalOpen={setConfigModalOpen}
-          setFeatureOffcanvasOpen={setFeatureOffcanvasOpen} />
+          setFeatureOffcanvasOpen={setFeatureOffcanvasOpen}
+          comparisonPanelOpen={comparisonPanelOpen} setComparisonPanelOpen={setComparisonPanelOpen}
+          comparisonCount={comparison?.differences.length} comparisonStatus={comparisonStatus} />
         </div>
   
         <div className="w-full">
@@ -503,13 +528,14 @@ if (hit1 === -1) {
               )}
             
               <div className="flex flex-col ml-4 mt-3 text-gray-900">
-                <h2 className="text-2xl">{genbankData.parsedSequence.name}</h2>
+                <h2 className="text-2xl" style={{ overflowWrap: "anywhere" }}>{comparison?.name || genbankData.parsedSequence.name}</h2>
                 <div>
                   <div className="flex flex-row">
-                    <span>{genbankData.parsedSequence.definition}</span>
+                    <span>{comparison && <>Reference: <strong>{genbankData.parsedSequence.name}</strong> · </>}{genbankData.parsedSequence.definition}</span>
                   </div>
                 </div>
               </div>
+              <ComparisonPanel open={comparisonPanelOpen} setOpen={setComparisonPanelOpen} onStatus={setComparisonStatus} reference={fullSequence} features={genbankData.parsedSequence.features} fastaUrl={fastaUrl} onResult={setComparison} onGoTo={(position) => rowVirtualizer.scrollToIndex(Math.floor(position / rowWidth), { align: "center" })} />
               <div ref={parentRef} className="mt-5 h-80">
                 <div
                   style={{
@@ -526,7 +552,7 @@ if (hit1 === -1) {
                       left: 0,
                       width: "100%",
                       transform: `translateY(${
-                        virtualItems[0].start -
+                        (virtualItems[0]?.start ?? 0) -
                         rowVirtualizer.options.scrollMargin
                       }px)`,
                     }}
@@ -545,6 +571,8 @@ if (hit1 === -1) {
                             key={virtualitem.index}
                             parsedSequence={genbankData.parsedSequence}
                             visibleFeatures={visibleFeatures}
+                            differences={comparison?.differences || []}
+                            proteins={comparison?.proteins}
                             rowStart={row.rowStart}
                             rowEnd={row.rowEnd}
                             rowWidth={rowWidth}

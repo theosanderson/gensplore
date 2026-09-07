@@ -21,6 +21,7 @@ import { FaGithub } from "react-icons/fa";
 
 const App = () => {
   const addlExamples = [
+    ["Escherichia phage phiX174", "/phix174.gb"],
     ["Mpox clade II", "NC_063383.1"],
     ["HIV-1", "NC_001802.1"],
     [
@@ -61,6 +62,7 @@ const App = () => {
     setLoaded(true);
   };
 
+  const [fastaUrl] = useQueryState("fasta");
   const [gbUrl, setGbUrl] = useQueryState("gb");
   const [loaded, setLoaded] = useQueryState("loaded");
   const [searchInput, setSearchInput] = useQueryState("search");
@@ -120,6 +122,7 @@ const App = () => {
       {ready && (
         <GensploreView
           genbankString={genbankString}
+          fastaUrl={typeof fastaUrl === "string" ? fastaUrl : undefined}
           searchInput={searchInput}
           setSearchInput={setSearchInput}
           showLogo={true}
@@ -276,11 +279,11 @@ const App = () => {
                   </button>
                 </li>
                 {addlExamples.map((example) => (
-                  <li>
+                  <li key={example[1]}>
                     <button
                       className="text-blue-400 hover:text-blue-700 mb-3"
                       onClick={
-                        example[1].startsWith("http")
+                        (example[1].startsWith("http") || example[1].startsWith("/"))
                           ? () => setGbUrl(example[1])
                           : () => loadFromGenbankId(example[1])
                       }

@@ -63,3 +63,11 @@ As a  component:
 
 ```
 
+
+Pass an optional `fastaUrl` string to `GensploreView` to load an alternative DNA
+FASTA for comparison with the GenBank reference. The viewer also offers a local
+file picker and URL input. Alignment runs in a browser worker; results show
+reference-relative DNA differences and translated changes above affected AA
+ribbons. Synonymous changes have no AA label; frameshifts and unsupported
+translation annotations are handled explicitly. Biological function is not predicted. See the root
+README for alignment limits and coordinate conventions.
