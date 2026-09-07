@@ -82,6 +82,7 @@ function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCal
     useEffect(() => {
       let cancelled = false;
       setGenbankData(null);
+      setComparison(null);
       const loadGenbankString = async () => {
         try {
           const genbankObject = await genbankToJson(genbankString);
@@ -90,9 +91,6 @@ function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCal
           genbankObject[0].parsedSequence.sequence =
             genbankObject[0].parsedSequence.sequence.toUpperCase();
           setGenbankData(genbankObject[0]);
-          if (setTitleCallback) {
-            setTitleCallback(genbankObject[0].parsedSequence.name + " | Gensplore");
-          }
         } catch (error) {
           console.error("Error loading GenBank file:", error);
         }
@@ -100,6 +98,14 @@ function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCal
       loadGenbankString();
       return () => { cancelled = true; };
     }, [genbankString]);
+
+    useEffect(() => {
+      const referenceName = genbankData?.parsedSequence.name;
+      if (!referenceName || !setTitleCallback) return;
+      setTitleCallback(comparison
+        ? `${comparison.name} vs ${referenceName} | Gensplore`
+        : `${referenceName} | Gensplore`);
+    }, [genbankData, comparison, setTitleCallback]);
   
     // detect ctrl-F and open search panel
     useEffect(() => {
@@ -518,10 +524,10 @@ if (hit1 === -1) {
               )}
             
               <div className="flex flex-col ml-4 mt-3 text-gray-900">
-                <h2 className="text-2xl">{genbankData.parsedSequence.name}</h2>
+                <h2 className="text-2xl" style={{ overflowWrap: "anywhere" }}>{comparison?.name || genbankData.parsedSequence.name}</h2>
                 <div>
                   <div className="flex flex-row">
-                    <span>{genbankData.parsedSequence.definition}</span>
+                    <span>{comparison && <>Reference: <strong>{genbankData.parsedSequence.name}</strong> · </>}{genbankData.parsedSequence.definition}</span>
                   </div>
                 </div>
               </div>
