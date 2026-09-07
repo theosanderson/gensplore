@@ -71,3 +71,5 @@ reference-relative DNA differences and translated changes above affected AA
 ribbons. Synonymous changes have no AA label; frameshifts and unsupported
 translation annotations are handled explicitly. Biological function is not predicted. See the root
 README for alignment limits and coordinate conventions.
+
+For an existing reference-coordinate alignment, pass `alignedSequence={{ name, sequence, insertions }}` instead of `fastaUrl`. The sequence has one IUPAC base (including `N`) or deletion gap (`-`) per reference base. Insertions are `{ position, sequence }`, where position is the number of reference bases before the insertion (0 means before the first base). This preserves supplied gap placement and bypasses FASTA realignment. Removing the prop clears the comparison.

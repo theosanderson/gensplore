@@ -24,7 +24,7 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { ToastContainer, toast } from "react-toastify/unstyled";
 import SearchPanel from "../SearchPanel";
 
-function GensploreView({ genbankString, searchInput: controlledSearchInput, setSearchInput: onSearchInputChange, setTitleCallback, fastaUrl }) {
+function GensploreView({ genbankString, searchInput: controlledSearchInput, setSearchInput: onSearchInputChange, setTitleCallback, fastaUrl, alignedSequence }) {
     const [localSearchInput, setLocalSearchInput] = useState("");
     const searchInput = controlledSearchInput === undefined ? localSearchInput : controlledSearchInput;
     const setSearchInput = useCallback((value) => {
@@ -542,7 +542,7 @@ if (hit1 === -1) {
                   </div>
                 </div>
               </div>
-              <ComparisonPanel open={comparisonPanelOpen} setOpen={setComparisonPanelOpen} onStatus={setComparisonStatus} reference={fullSequence} features={genbankData.parsedSequence.features} fastaUrl={fastaUrl} onResult={setComparison} onGoTo={(position) => rowVirtualizer.scrollToIndex(Math.floor(position / rowWidth), { align: "center" })} />
+              <ComparisonPanel open={comparisonPanelOpen} setOpen={setComparisonPanelOpen} onStatus={setComparisonStatus} reference={fullSequence} features={genbankData.parsedSequence.features} fastaUrl={fastaUrl} alignedSequence={alignedSequence} onResult={setComparison} onGoTo={(position) => rowVirtualizer.scrollToIndex(Math.floor(position / rowWidth), { align: "center" })} />
               <div ref={parentRef} className="mt-5 h-80">
                 <div
                   style={{

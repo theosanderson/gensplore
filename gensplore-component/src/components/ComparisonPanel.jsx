@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import AlignmentWorker from '../comparison/worker.js?worker&inline';
 
-export default function ComparisonPanel({ reference, features, fastaUrl, onResult, onGoTo, open, setOpen, onStatus }) {
+export default function ComparisonPanel({ reference, features, fastaUrl, alignedSequence, onResult, onGoTo, open, setOpen, onStatus }) {
   const [fasta, setFasta] = useState(null);
   const [url, setUrl] = useState(fastaUrl || '');
   const [request, setRequest] = useState(0);
@@ -11,6 +11,15 @@ export default function ComparisonPanel({ reference, features, fastaUrl, onResul
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const generation = useRef(0);
+  const previousAligned = useRef();
+  useEffect(() => {
+    if (alignedSequence || previousAligned.current) {
+      generation.current++;
+      setFasta(null);
+      setSource('');
+    }
+    previousAligned.current = alignedSequence;
+  }, [alignedSequence]);
   useEffect(() => { onStatus({ busy, error }); }, [busy, error, onStatus]);
   useEffect(() => { if (error) setOpen(true); }, [error, setOpen]);
   const clear = () => { setResult(null); onResult(null); setError(''); };
@@ -27,7 +36,7 @@ export default function ComparisonPanel({ reference, features, fastaUrl, onResul
     }
   }, [fastaUrl, onResult]);
   useEffect(() => {
-    if (!source) return;
+    if (!source || alignedSequence) return;
     const controller = new AbortController();
     const id = ++generation.current;
     clear(); setFasta(null); setBusy(true);
@@ -43,9 +52,9 @@ export default function ComparisonPanel({ reference, features, fastaUrl, onResul
       } catch (e) { if (!controller.signal.aborted && id === generation.current) { setError(e.message); setBusy(false); } }
     })();
     return () => controller.abort();
-  }, [source, request]);
+  }, [source, request, alignedSequence]);
   useEffect(() => {
-    if (fasta === null) { setResult(null); onResult(null); return; }
+    if (fasta === null && !alignedSequence) { setResult(null); onResult(null); return; }
     clear();
     setBusy(true);
     const worker = new AlignmentWorker();
@@ -61,9 +70,9 @@ export default function ComparisonPanel({ reference, features, fastaUrl, onResul
       if (cancelled || id !== generation.current) return;
       setError('Alignment failed. Please try another FASTA.'); setBusy(false);
     };
-    worker.postMessage({ reference, features, fasta });
+    worker.postMessage({ reference, features, fasta, alignedSequence });
     return () => { cancelled = true; worker.terminate(); };
-  }, [reference, features, fasta, onResult]);
+  }, [reference, features, fasta, alignedSequence, onResult]);
   const loadFile = async (file) => {
     if (!file) return;
     const id = ++generation.current;
@@ -82,12 +91,13 @@ export default function ComparisonPanel({ reference, features, fastaUrl, onResul
         <button type="button" onClick={() => setOpen(false)} aria-label="Close comparison">×</button>
       </div>
       <section className="comparison-panel" aria-label="Compare FASTA">
-    <label>FASTA file <input type="file" accept=".fa,.fasta,.fna,.txt" onChange={e => { loadFile(e.target.files[0]); e.target.value = ''; }} /></label>
+    {!alignedSequence && <><label>FASTA file <input type="file" accept=".fa,.fasta,.fna,.txt" onChange={e => { loadFile(e.target.files[0]); e.target.value = ''; }} /></label>
     <form onSubmit={e => { e.preventDefault(); setSource(url.trim()); setRequest(value => value + 1); }}>
       <label>FASTA URL <input type="text" inputMode="url" className="comparison-url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://example.org/alternative.fasta" required /></label>
       <button type="submit">Load URL</button>
     </form>
     {(fasta !== null || source || result || error || busy) && <button onClick={() => { generation.current++; setSource(''); setFasta(null); setBusy(false); clear(); }}>Clear</button>}
+    </>}
     {busy && <p role="status">Loading / aligning FASTA…</p>}
     {error && <p role="alert">{error}</p>}
     {result && <><p role="status" className="comparison-summary">
