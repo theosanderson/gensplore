@@ -272,8 +272,44 @@ const SingleRow = ({
   const extraPadding = 25;
   const baseHeight = 70;
   const rowSpacing = 20;
-  const height = baseHeight + laneCount * rowSpacing;
   const width = rowSequence.length * sep;
+
+  // Place change labels in separate lanes above the reference. Labels can be
+  // wider than their nucleotide span, particularly when zoomed out.
+  const rowDifferences = differences.filter(d => d.type === 'Insertion'
+    ? d.start >= rowStart && (d.start < rowEnd || (d.start === rowEnd && rowEnd === fullSequence.length))
+    : d.start < rowEnd && d.end > rowStart);
+  const changeLaneEnds = [];
+  const changeLabelWidth = Math.max(width, 120);
+  const changeLabels = rowDifferences.map(d => {
+    const start = Math.max(rowStart, d.start);
+    const end = Math.min(rowEnd, d.end);
+    const insertion = d.type === 'Insertion';
+    const anchor = insertion
+      ? (d.start - rowStart - 0.5) * sep
+      : ((start + end - 1) / 2 - rowStart) * sep;
+    const label = insertion ? `INS +${d.alternative}`
+      : d.type === 'Deletion' ? `DEL ${d.reference}`
+      : d.type === 'Ambiguous' ? `? ${d.reference} → ${d.alternative}`
+      : `${d.reference} → ${d.alternative}`;
+    const maxCharacters = Math.max(8, Math.floor((changeLabelWidth - 20) / 7));
+    const displayLabel = label.length > maxCharacters ? `${label.slice(0, maxCharacters - 1)}…` : label;
+    const labelWidth = Math.min(changeLabelWidth, displayLabel.length * 7 + 16);
+    const left = Math.max(-sep / 2, Math.min(anchor - labelWidth / 2, changeLabelWidth - labelWidth));
+    let lane = changeLaneEnds.findIndex(right => right + 8 <= left);
+    if (lane === -1) lane = changeLaneEnds.length;
+    changeLaneEnds[lane] = left + labelWidth;
+    const color = insertion ? '#1d4ed8' : d.type === 'Deletion' ? '#b91c1c'
+      : d.type === 'Ambiguous' ? '#6d28d9' : '#92400e';
+    const background = insertion ? '#eff6ff' : d.type === 'Deletion' ? '#fef2f2'
+      : d.type === 'Ambiguous' ? '#f5f3ff' : '#fffbeb';
+    const position = insertion ? `after reference base ${d.start}`
+      : `reference ${d.start + 1}${d.end > d.start + 1 ? `–${d.end}` : ''}`;
+    const description = `${d.type} at ${position}: ${d.reference || '—'} → ${d.alternative || '—'}`;
+    return { ...d, start, end, anchor, displayLabel, labelWidth, left, lane, color, background, description };
+  });
+  const changeTrackHeight = changeLabels.length ? 18 + changeLaneEnds.length * 28 : 0;
+  const height = baseHeight + laneCount * rowSpacing + changeTrackHeight;
 
   // Ticks
   const spacing = rowStart > 10000 ? 60 : 40;
@@ -663,7 +699,7 @@ const SingleRow = ({
       id={`row-${rowId}`}
     >
       <svg
-        width={width + 40}
+        width={Math.max(width, changeLabels.length ? changeLabelWidth : 0) + 40}
         height={height - 20 + (enableRC ? 20 : 0)}
         style={{ position: "absolute", top: 0, left: 0 }}
       >
@@ -693,16 +729,37 @@ const SingleRow = ({
           stroke="black"
         />
 
-        {/* Reference-relative differences; insertions are anchored to a boundary. */}
-        <g>{differences.filter(d => (d.start < rowEnd || (d.start === fullSequence.length && rowEnd === fullSequence.length)) && (d.end > rowStart || (d.type === 'Insertion' && d.start >= rowStart) || (d.start === fullSequence.length && rowEnd === fullSequence.length))).map((d, i) => <rect key={i}
-          x={extraPadding + (Math.max(rowStart, Math.min(d.start, fullSequence.length - 1)) - rowStart) * sep - sep / 2}
-          y={height - 57} width={Math.max(3, (Math.min(rowEnd, d.end) - Math.max(rowStart, d.start)) * sep)} height={18}
-          fill={d.type === 'Deletion' ? '#ef4444' : d.type === 'Insertion' ? '#3b82f6' : '#f59e0b'} fillOpacity={0.35}>
-          <title>{d.type}: {d.reference || '—'} → {d.alternative || '—'}</title>
-        </rect>)}</g>
+        {/* Change labels sit above the reference, connected to their exact span. */}
+        {changeLabels.length > 0 && <g aria-label="Reference-relative changes" transform={`translate(${extraPadding}, 0)`}>
+          {changeLabels.map((d, i) => <g key={`connector-${i}`}>
+            <path d={`M ${d.left + d.labelWidth / 2} ${height - 69 - d.lane * 28} L ${d.anchor} ${height - 61} L ${d.anchor} ${height - 56}`}
+              fill="none" stroke={d.color} strokeWidth={1.25} />
+            {d.type === 'Insertion'
+              ? <path d={`M ${d.anchor - 4} ${height - 57} L ${d.anchor} ${height - 51} L ${d.anchor + 4} ${height - 57}`}
+                  fill={d.color} />
+              : <rect x={(d.start - rowStart - 0.5) * sep} y={height - 57}
+                  width={(d.end - d.start) * sep} height={15} fill={d.background} />}
+          </g>)}
+          {changeLabels.map((d, i) => <g key={`label-${i}`} role="img" aria-label={d.description}>
+            <title>{d.description}</title>
+            <rect x={d.left} y={height - 91 - d.lane * 28} width={d.labelWidth} height={22}
+              rx={4} fill={d.background} stroke={d.color} />
+            <text x={d.left + d.labelWidth / 2} y={height - 76 - d.lane * 28}
+              textAnchor="middle" fontSize={12} fontWeight={600} fontFamily="monospace" fill={d.color}>
+              {d.displayLabel}
+            </text>
+          </g>)}
+        </g>}
         {/* Forward sequence */}
         <g transform={`translate(${extraPadding}, ${height - 55})`}>
           {chars}
+        </g>
+
+        {/* Draw deletion strikes over the reference letters, keeping them readable. */}
+        <g aria-label="Deleted reference bases" pointerEvents="none" transform={`translate(${extraPadding}, 0)`}>
+          {changeLabels.filter(d => d.type === 'Deletion').map((d, i) => <line key={i}
+            x1={(d.start - rowStart - 0.5) * sep} x2={(d.end - rowStart - 0.5) * sep}
+            y1={height - 49} y2={height - 49} stroke={d.color} strokeWidth={2} />)}
         </g>
 
         {/* Reverse complement */}

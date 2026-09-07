@@ -25,3 +25,5 @@
 .comparison-table { max-height: 260px; overflow: auto; }
 .comparison-table table { border-collapse: collapse; width: 100%; text-align: left; }
 .comparison-table td, .comparison-table th { padding: 6px 10px; border-bottom: 1px solid #e5e7eb; max-width: 280px; overflow-wrap: anywhere; }
+
+.comparison-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; }

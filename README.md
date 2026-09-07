@@ -25,7 +25,11 @@ local `.fasta`/`.fa`/`.fna` file or load a URL. A shared link can supply both fi
 
 Remote servers must allow CORS. Local files are processed in the browser.
 The comparison lists substitutions, insertions, deletions, and ambiguous-base
-differences, marks them on the reference, and provides **Go to** navigation.
+differences, shows labelled changes on a separate track above the reference, and provides
+**Go to** navigation. Substitutions show reference → alternative, insertions use
+`INS +bases` with a pointer to the insertion boundary, and deletions use
+`DEL bases` with a strike through the deleted reference letters. Closely spaced
+labels stack to avoid overlaps.
 Positions are 1-based reference coordinates; insertions are labelled with the
 preceding reference position (0 means before the first base).
 

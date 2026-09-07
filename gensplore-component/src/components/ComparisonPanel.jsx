@@ -67,6 +67,12 @@ export default function ComparisonPanel({ reference, fastaUrl, onResult, onGoTo 
     {busy && <p role="status">Loading / aligning FASTA…</p>}
     {error && <p role="alert">{error}</p>}
     {result && <><p role="status">{result.name}: {result.differences.length} difference(s), {result.distance} base edit(s). Coordinates refer to the reference (1-based); insertions occur after the indicated base, with 0 meaning before the first base.</p>
+      {result.differences.length > 0 && <p className="comparison-legend" aria-label="Change marker legend">
+        <span><b style={{ color: '#92400e' }}>G → A</b> substitution (reference → alternative)</span>
+        <span><b style={{ color: '#1d4ed8' }}>INS +AC</b> insertion at the pointer</span>
+        <span><b style={{ color: '#b91c1c' }}>DEL <s>AC</s></b> deleted reference bases</span>
+        <span><b style={{ color: '#6d28d9' }}>?</b> ambiguous base</span>
+      </p>}
       {result.differences.length > 0 && <div className="comparison-table"><table><thead><tr><th>Position</th><th>Type</th><th>Reference</th><th>Alternative</th><th>Navigate</th></tr></thead><tbody>
         {result.differences.map((d, index) => <tr key={index}><td>{d.type === 'Insertion' ? `After ${d.start}` : d.end > d.start + 1 ? `${d.start + 1}–${d.end}` : d.start + 1}</td><td>{d.type}</td><td>{d.reference || '—'}</td><td>{d.alternative || '—'}</td><td><button onClick={() => onGoTo(Math.min(d.start, reference.length - 1))}>Go to</button></td></tr>)}
       </tbody></table></div>}
