@@ -6,8 +6,9 @@
   "packageManager": "yarn@4.18.0",
   "scripts": {
     "start": "vite",
-    "build": "vite build",
-    "serve": "vite preview"
+    "build": "yarn build:component && vite build",
+    "serve": "vite preview",
+    "build:component": "yarn --cwd ../gensplore-component install --immutable && yarn --cwd ../gensplore-component build"
   },
   "dependencies": {
     "gensplore": "portal:../gensplore-component",
