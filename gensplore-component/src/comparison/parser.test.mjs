@@ -44,4 +44,6 @@ ORIGIN
   const { parsedSequence } = (await parseReference(text))[0];
   assert.equal(parsedSequence.sequence, 'ACGTACGTACGT');
   assert.deepEqual(compareAligned(parsedSequence.sequence, { sequence: 'ACGTACGTACGT' }).differences, []);
+  const withUracil = (await parseReference(text.replace('acgtacgtacgt', 'acguacguacgu')))[0];
+  assert.equal(withUracil.parsedSequence.sequence, 'ACGUACGUACGU');
 });
