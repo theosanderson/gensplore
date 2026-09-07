@@ -69,6 +69,8 @@ try {
       await page.getByRole('cell', { name: 'Ambiguous', exact: true }).waitFor();
       assert.equal(await page.getByLabel('FASTA URL').count(), 0);
       await page.getByRole('button', { name: 'Close comparison' }).click();
+      await page.getByText('Coverage gap', { exact: true }).first().waitFor();
+      assert(await page.locator('svg text[fill-opacity="0.35"]').count() > 0, 'Coverage gap reference bases are faded');
       await page.getByRole('button', { name: 'Remove aligned sequence', exact: true }).click();
       await page.getByRole('heading', { name: 'Aligned preview', exact: true }).waitFor({ state: 'detached' });
       assert.deepEqual(errors, [], 'No browser errors');
