@@ -18,7 +18,7 @@ There is now a React component for embedding Gensplore in your own website. See 
 
 ### Comparing an alternative FASTA
 
-Load a GenBank reference, then click **Compare** in the bottom-right toolbar to
+Load a GenBank reference, then click the **Compare FASTA** (⇄) icon in the bottom-right toolbar to
 open the comparison drawer and choose a
 local `.fasta`/`.fa`/`.fna` file or load a URL. A shared link can supply both files:
 

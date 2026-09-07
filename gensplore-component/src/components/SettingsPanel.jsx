@@ -2,6 +2,7 @@ import React from 'react';
 import Slider from 'rc-slider';
 import "rc-slider/assets/index.css";
 import { AiOutlineZoomIn, AiOutlineZoomOut } from 'react-icons/ai';
+import { FaExchangeAlt } from 'react-icons/fa';
 import { MdSettings } from 'react-icons/md';
 import { PiTagChevronFill } from "react-icons/pi";
 
@@ -10,9 +11,10 @@ const SettingsPanel = ({ zoomLevel, setZoomLevel, configModalOpen, setConfigModa
     <>
       <button className="comparison-toolbar-button" type="button" aria-label="Compare FASTA"
         aria-expanded={comparisonPanelOpen} aria-controls="comparison-drawer-panel"
-        title={comparisonStatus?.error || "Compare an alternative FASTA"}
+        title={comparisonStatus?.error || (comparisonStatus?.busy ? "Aligning FASTA…" : comparisonCount !== undefined ? `Compare FASTA (${comparisonCount} differences)` : "Compare an alternative FASTA")}
         onClick={() => setComparisonPanelOpen(true)}>
-        Compare{comparisonStatus?.busy ? ' …' : comparisonStatus?.error ? ' !' : comparisonCount !== undefined ? ` (${comparisonCount})` : ''}
+        <FaExchangeAlt aria-hidden="true" className={comparisonStatus?.busy ? 'comparison-icon-busy' : ''} />
+        {comparisonStatus?.error && <span className="comparison-icon-indicator" aria-hidden="true">!</span>}
       </button>
     <button className="inline-block text-gray-400 hover:text-gray-600" aria-label="Features" title="Features" onClick={() => setFeatureOffcanvasOpen(true)}>
         <PiTagChevronFill className="inline-block" />

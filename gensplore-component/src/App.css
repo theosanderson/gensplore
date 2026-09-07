@@ -28,9 +28,13 @@
 
 .comparison-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; }
 
-.comparison-toolbar { display: flex; align-items: center; gap: 14px; width: 410px; max-width: calc(100vw - 8px); min-height: 48px; }
+.comparison-toolbar { display: flex; align-items: center; gap: 14px; width: 330px; max-width: calc(100vw - 8px); min-height: 48px; }
 .comparison-toolbar > button { flex-shrink: 0; }
-.comparison-toolbar-button { border: 1px solid #cbd5e1; border-radius: 5px; padding: 5px 8px; font-size: 13px; color: #334155; background: #f8fafc; }
+.comparison-toolbar-button { position: relative; padding: 4px; color: #64748b; }
+.comparison-toolbar-button:hover, .comparison-toolbar-button[aria-expanded=true] { color: #334155; }
+.comparison-icon-indicator { position: absolute; top: -7px; right: -5px; color: #b91c1c; font-size: 11px; font-weight: bold; }
+.comparison-icon-busy { animation: comparison-pulse 1s ease-in-out infinite alternate; }
+@keyframes comparison-pulse { to { opacity: 0.35; } }
 .comparison-drawer { position: fixed; inset: 0; z-index: 40; }
 .comparison-drawer-overlay { position: fixed; inset: 0; background: rgb(15 23 42 / 25%); }
 .comparison-drawer-content { position: fixed; top: 0; right: 0; bottom: 0; width: min(650px, 100vw); background: white; box-shadow: -8px 0 30px rgb(15 23 42 / 15%); overflow-y: auto; }
