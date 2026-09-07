@@ -59,22 +59,3 @@ Source: [NCBI NC_001422.1](https://www.ncbi.nlm.nih.gov/nuccore/NC_001422.1),
 downloaded 2026-09-07. Additional tests use artificial sequences to exercise edits.
 Run the alignment tests with:
 `node --test gensplore-component/src/comparison/*.test.mjs`.
-
-### Development and releases
-
-Use Node 24 LTS (`nvm use`) and Corepack. Both projects pin Yarn 4.18.0; Yarn lockfiles are the source of truth.
-
-```sh
-corepack enable
-cd gensplore-component
-yarn install --immutable
-yarn test
-yarn build
-cd ../website
-yarn install --immutable
-yarn start
-```
-
-The website links to the component through a Yarn portal. Build the component before starting the development website, and rebuild it after changing the component. The website production build installs and builds the component automatically for clean-checkout deployments. To check Storybook, run `yarn build-storybook` in `gensplore-component`. To test the actual tarball with React 18 and 19 in an isolated Astro app, run `yarn playwright install chromium` followed by `yarn test:package` there. After building the website and Storybook, `yarn test:previews` browser-checks both production builds.
-
-Publishing a GitHub release runs the npm workflow with Node 24 and the pinned Yarn version. It installs from the immutable lockfile, tests, derives the npm version from the tag (`v0.0.7` becomes `0.0.7`), builds, and publishes using the `NPM_TOKEN` repository secret. Create the tag from a commit containing the updated workflow; rerunning an old release uses its old workflow. No npm install/build scripts run for consumers.
