@@ -26,7 +26,9 @@
 .comparison-table table { border-collapse: collapse; width: 100%; text-align: left; }
 .comparison-table td, .comparison-table th { padding: 6px 10px; border-bottom: 1px solid #e5e7eb; max-width: 280px; overflow-wrap: anywhere; }
 
-.comparison-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.comparison-summary { display: flex; gap: 12px; align-items: baseline; }
+.comparison-summary strong { white-space: nowrap; }
+.comparison-summary span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #64748b; }
 
 .comparison-toolbar { display: flex; align-items: center; gap: 14px; width: 330px; max-width: calc(100vw - 8px); min-height: 48px; }
 .comparison-toolbar > button { flex-shrink: 0; }

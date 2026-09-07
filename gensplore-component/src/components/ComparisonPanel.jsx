@@ -62,31 +62,25 @@ export default function ComparisonPanel({ reference, features, fastaUrl, onResul
     <Dialog.Panel id="comparison-drawer-panel" className="comparison-drawer-content">
       <div className="comparison-drawer-header">
         <Dialog.Title>Compare FASTA</Dialog.Title>
-        <button type="button" onClick={() => setOpen(false)} aria-label="Close comparison">Close ×</button>
+        <button type="button" onClick={() => setOpen(false)} aria-label="Close comparison">×</button>
       </div>
       <section className="comparison-panel" aria-label="Compare FASTA">
-    <p>One complete DNA sequence, in the reference orientation and starting at the same point. Up to 100,000 bases and 128 edits. Ambiguous bases are reported separately. Amino-acid changes are shown above coding ribbons; biological function is not predicted.</p>
     <label>FASTA file <input type="file" accept=".fa,.fasta,.fna,.txt" onChange={e => { loadFile(e.target.files[0]); e.target.value = ''; }} /></label>
     <form onSubmit={e => { e.preventDefault(); setSource(url.trim()); setRequest(value => value + 1); }}>
       <label>FASTA URL <input type="text" inputMode="url" className="comparison-url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://example.org/alternative.fasta" required /></label>
       <button type="submit">Load URL</button>
     </form>
-    <p>Remote FASTA servers must allow CORS access.</p>
-    <button onClick={() => { generation.current++; setSource(''); setFasta(null); setBusy(false); clear(); }}>Clear comparison</button>
+    {(fasta !== null || source || result || error || busy) && <button onClick={() => { generation.current++; setSource(''); setFasta(null); setBusy(false); clear(); }}>Clear</button>}
     {busy && <p role="status">Loading / aligning FASTA…</p>}
     {error && <p role="alert">{error}</p>}
-    {result && <><p role="status">{result.name}: {result.differences.length} difference(s), {result.distance} base edit(s). Coordinates refer to the reference (1-based); insertions occur after the indicated base, with 0 meaning before the first base.</p>
-      <p>AA labels use reference protein positions. Translation uses the annotated coding span (tables 1 and 11); initiation and translation beyond that span are not inferred. A frame-shift label marks where downstream AA correspondence becomes uncertain.</p>
+    {result && <><p role="status" className="comparison-summary">
+      <strong>{result.differences.length} {result.differences.length === 1 ? 'change' : 'changes'}</strong>
+      <span title={result.name}>{result.name}</span>
+    </p>
       {result.proteins?.some(protein => protein?.warning) && <ul aria-label="Amino-acid comparison notes">
         {result.proteins.map((protein, index) => protein?.warning && <li key={index}>{features[index].name}: {protein.warning}</li>)}
       </ul>}
-      {result.differences.length > 0 && <p className="comparison-legend" aria-label="Change marker legend">
-        <span><b style={{ color: '#92400e' }}><s>G</s> → A</b> substitution (reference → alternative)</span>
-        <span><b style={{ color: '#1d4ed8' }}>INS +AC</b> insertion at the pointer</span>
-        <span><b style={{ color: '#b91c1c' }}>DEL <s>AC</s></b> deleted reference bases</span>
-        <span><b style={{ color: '#6d28d9' }}>?</b> ambiguous base</span>
-      </p>}
-      {result.differences.length > 0 && <div className="comparison-table"><table><thead><tr><th>Position</th><th>Type</th><th>Reference</th><th>Alternative</th><th>Navigate</th></tr></thead><tbody>
+      {result.differences.length > 0 && <div className="comparison-table"><table><thead><tr><th title="1-based reference coordinates; insertions follow the indicated base">Ref. position</th><th>Type</th><th>Reference</th><th>Alternative</th><th aria-label="Navigate"></th></tr></thead><tbody>
         {result.differences.map((d, index) => <tr key={index}><td>{d.type === 'Insertion' ? `After ${d.start}` : d.end > d.start + 1 ? `${d.start + 1}–${d.end}` : d.start + 1}</td><td>{d.type}</td><td>{d.reference || '—'}</td><td>{d.alternative || '—'}</td><td><button onClick={() => { setOpen(false); requestAnimationFrame(() => onGoTo(Math.min(d.start, reference.length - 1))); }}>Go to</button></td></tr>)}
       </tbody></table></div>}
     </>}
