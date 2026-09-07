@@ -297,9 +297,11 @@ const SingleRow = ({
         const text = change.type === 'Insertion' ? `AA INS +${change.alternative} · after ${change.aaPosition}`
           : change.type === 'Deletion' ? `AA DEL ${change.reference} · ${residue}`
           : change.type === 'Frameshift' ? `Frame shift · AA ${change.aaPosition}`
+          : change.type === 'Ambiguous' ? `Coverage gap · AA ${residue}`
           : `AA ${change.reference}${change.aaPosition} → ${change.alternative}`;
         const maxCharacters = Math.max(8, Math.floor((changeLabelWidth - 20) / 7));
-        const label = text.length > maxCharacters ? `${text.slice(0, maxCharacters - 1)}…` : text;
+        const displayText = change.type === 'Ambiguous' ? 'Coverage gap' : text;
+        const label = displayText.length > maxCharacters ? `${displayText.slice(0, maxCharacters - 1)}…` : displayText;
         const labelWidth = Math.min(changeLabelWidth, label.length * 7 + 16);
         const anchor = ((change.pointerPosition ?? change.anchor) - rowStart) * sep;
         const left = Math.max(-sep / 2, Math.min(anchor - labelWidth / 2, changeLabelWidth - labelWidth));
@@ -449,7 +451,7 @@ const SingleRow = ({
         {feature.proteinLabels.map((change, index) => <g key={`aa-label-${index}`} role="img" aria-label={`${feature.name}: ${change.text}`}>
           <title>{feature.name}: {change.text}{change.type === 'Frameshift' ? '; downstream amino-acid correspondence is uncertain' : ''}</title>
           <rect x={change.left} y={y - 34 - change.lane * 26} width={change.labelWidth} height={20}
-            rx={4} fill="white" stroke={change.color} />
+            rx={4} fill={change.type === 'Ambiguous' ? '#f5f3ff' : 'white'} stroke={change.color} />
           <text x={change.left + change.labelWidth / 2} y={y - 20 - change.lane * 26}
             textAnchor="middle" fontSize={12} fontFamily="monospace" fontWeight={600} fill={change.color}>{change.label}</text>
         </g>)}
@@ -564,7 +566,7 @@ const SingleRow = ({
                   })
                 }
                 onMouseLeave={() => setHoveredInfo(null)}
-                fillOpacity={0.75}
+                fillOpacity={feature.proteinChanges.some(change => change.type === 'Ambiguous' && codon.codonIndex >= change.start && codon.codonIndex < change.end) ? 0.35 : 0.75}
                 style={{ cursor: "pointer" }}
               >
                 {codon.aminoAcid}
