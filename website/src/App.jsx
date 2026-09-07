@@ -6,11 +6,10 @@ import React, {
 
 
 import "./App.css";
-import ClipLoader from "react-spinners/ClipLoader";
+import { ClipLoader } from "react-spinners";
 
 import GensploreView from "gensplore";
 import { useDebounce, useQueryState } from "./hooks";
-import "react-toastify/dist/ReactToastify.css";
 import { GiDna1 } from "react-icons/gi";
 // import github icon
 import { FaGithub } from "react-icons/fa";
@@ -186,7 +185,7 @@ const App = () => {
               )}
               <input
                 type="file"
-                className="border rounded-lg py-2 px-3 mt-2 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                className="border rounded-lg py-2 px-3 mt-2 focus:outline-hidden focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 onChange={(e) => loadFromFile(e.target.files[0])}
               />
             </div>
@@ -198,7 +197,7 @@ const App = () => {
               <div>
                 <input
                   type="text"
-                  className="border rounded-lg py-2 px-3 mt-2focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  className="border rounded-lg py-2 px-3 mt-2focus:outline-hidden focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                   onChange={(e) => setGenbankId(e.target.value)}
                   placeholder="NC..."
                   onKeyUp={(e) => {

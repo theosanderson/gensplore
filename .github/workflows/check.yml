@@ -1,0 +1,33 @@
+name: Check package
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - name: Enable Yarn
+        run: |
+          npm install --global corepack@0.36.0
+          corepack enable
+      - run: yarn install --immutable
+        working-directory: gensplore-component
+      - run: yarn test && yarn build && yarn build-storybook
+        working-directory: gensplore-component
+      - run: yarn playwright install --with-deps chromium && yarn test:package
+        working-directory: gensplore-component
+      - run: yarn install --immutable && yarn build
+        working-directory: website
+      - run: yarn test:previews
+        working-directory: gensplore-component

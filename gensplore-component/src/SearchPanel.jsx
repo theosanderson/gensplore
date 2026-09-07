@@ -1,10 +1,26 @@
 import React, {
     useState,
     useEffect,
+    useRef,
   } from "react";
 
 import { FaSearch, FaTimes } from "react-icons/fa";
-import { DebounceInput } from "react-debounce-input";
+// Keep the input responsive while deferring sequence searches.
+function DebouncedInput({ value, onChange, ...props }) {
+  const [draft, setDraft] = useState(value ?? "");
+  const timer = useRef();
+  useEffect(() => {
+    clearTimeout(timer.current);
+    setDraft(value ?? "");
+  }, [value]);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  return <input {...props} value={draft} onChange={(event) => {
+    const next = event.target.value;
+    setDraft(next);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => onChange({ target: { value: next } }), 300);
+  }} />;
+}
 
 // settings icon
 
@@ -56,7 +72,7 @@ function SearchPanel({
           <>
             <select
               value={searchType}
-              onChange={(option) => setSearchType(option.value)}
+              onChange={(event) => setSearchType(event.target.value)}
               className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-2 rounded inline-flex items-center"
             >
               {searchOption.map((option) => (
@@ -66,13 +82,11 @@ function SearchPanel({
               ))}
             </select>
   
-            <DebounceInput
-              minLength={2}
-              debounceTimeout={300}
+            <DebouncedInput
               type="text"
               value={searchInput}
               onChange={handleInputChange}
-              className="mx-2 bg-white focus:outline-none focus:shadow-outline border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal"
+              className="mx-2 bg-white focus:outline-hidden focus:shadow-outline border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal"
               placeholder={searchType === "nuc" ? "nuc. index" : searchType === "annot" ? "gene name" : "ATGGC.."}
               id="search-input"
               // don't autocomplete

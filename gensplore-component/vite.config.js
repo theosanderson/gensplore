@@ -1,44 +1,37 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
+import { esmExternalRequirePlugin } from "rolldown/plugins";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
 
 export default defineConfig({
-  worker: {
-    format: "es",
-  },
   plugins: [
-    react(), 
-    cssInjectedByJsPlugin(),
-  
+    react(),
+    cssInjectedByJsPlugin({
+      injectCodeFunction: function (css) {
+        if (typeof document === "undefined" || document.getElementById("gensplore-styles")) return;
+        const style = document.createElement("style");
+        style.id = "gensplore-styles";
+        const nonce = document.querySelector('meta[property="csp-nonce"]')?.content;
+        if (nonce) style.nonce = nonce;
+        style.appendChild(document.createTextNode(css));
+        document.head.appendChild(style);
+      },
+    }),
   ],
-
+  resolve: { alias: { events: require.resolve("events/") } },
+  worker: { format: "es" },
   build: {
-    //extry: 'src/index.js',
-
     lib: {
       entry: "src/index.js",
-      name: "Gensplore", // give your library a name
-      fileName: (format) => `gensplore.${format}.js`,
-      //  formats: ['iife']
+      formats: ["es", "cjs"],
+      fileName: (format) => format === "es" ? "gensplore.js" : "gensplore.cjs",
+      cssFileName: "gensplore",
     },
-
-    //entry: 'src/App.jsx',
-
-    rollupOptions: {
-      // make sure to externalize deps that shouldn't be bundled
-      // into your library
-      external: ["react", "react-dom", "react/jsx-runtime"],
-      output: {
-        // Provide global variables to use in the UMD build
-        // for externalized deps
-        globals: {
-          react: "React",
-          "react-dom": "ReactDOM",
-        },
-      },
+    rolldownOptions: {
+      // Dependencies contain CJS React imports; convert these for browser/SSR ESM consumers.
+      plugins: [esmExternalRequirePlugin({ external: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "react-dom/client"] })],
     },
-  },
-  optimizeDeps: {
-    include: [], //add 'prop-types' here
   },
 });

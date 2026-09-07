@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Dialog } from '@headlessui/react';
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import AlignmentWorker from '../comparison/worker.js?worker&inline';
 
 export default function ComparisonPanel({ reference, features, fastaUrl, onResult, onGoTo, open, setOpen, onStatus }) {
@@ -74,11 +74,11 @@ export default function ComparisonPanel({ reference, features, fastaUrl, onResul
       if (id === generation.current) setFasta(text);
     } catch (e) { if (id === generation.current) { setError(e.message); setBusy(false); } }
   };
-  return <Dialog open={open} onClose={() => setOpen(false)} className="comparison-drawer">
+  return <Dialog open={open} onClose={() => setOpen(false)} className="gensplore comparison-drawer">
     <div className="comparison-drawer-overlay" aria-hidden="true" />
-    <Dialog.Panel id="comparison-drawer-panel" className="comparison-drawer-content">
+    <DialogPanel id="comparison-drawer-panel" className="comparison-drawer-content">
       <div className="comparison-drawer-header">
-        <Dialog.Title>Compare FASTA</Dialog.Title>
+        <DialogTitle>Compare FASTA</DialogTitle>
         <button type="button" onClick={() => setOpen(false)} aria-label="Close comparison">×</button>
       </div>
       <section className="comparison-panel" aria-label="Compare FASTA">
@@ -102,6 +102,6 @@ export default function ComparisonPanel({ reference, features, fastaUrl, onResul
       </tbody></table></div>}
     </>}
       </section>
-    </Dialog.Panel>
+    </DialogPanel>
   </Dialog>;
 }

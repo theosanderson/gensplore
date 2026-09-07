@@ -7,7 +7,8 @@ import React, {
     useCallback,
   } from "react";
 import { FaRegClipboard, FaRegCopy } from "react-icons/fa";
-import "../App.css"
+import "../App.css";
+import "react-toastify/dist/ReactToastify.css";
 import Offcanvas from './Offcanvas';
 import ContextMenu from './ContextMenu';
 
@@ -16,14 +17,20 @@ import Tooltip from "./Tooltip";
 import { getReverseComplement, filterFeatures } from "../utils";
 import SingleRow from "./SingleRow";
 import SettingsPanel from "./SettingsPanel";
-import { Dialog } from "@headlessui/react";
-import { genbankToJson } from "bio-parsers";
+import { Dialog, DialogPanel, DialogTitle, Description } from "@headlessui/react";
+import { genbankToJson } from "@teselagen/bio-parsers";
 import { useMeasure } from "react-use"; // or just 'react-use-measure'
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
-import { ToastContainer, toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify/unstyled";
 import SearchPanel from "../SearchPanel";
 
-function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCallback, fastaUrl }) {
+function GensploreView({ genbankString, searchInput: controlledSearchInput, setSearchInput: onSearchInputChange, setTitleCallback, fastaUrl }) {
+    const [localSearchInput, setLocalSearchInput] = useState("");
+    const searchInput = controlledSearchInput === undefined ? localSearchInput : controlledSearchInput;
+    const setSearchInput = useCallback((value) => {
+      setLocalSearchInput(value);
+      onSearchInputChange?.(value);
+    }, [onSearchInputChange]);
     const [comparison, setComparison] = useState(null);
     const [comparisonPanelOpen, setComparisonPanelOpen] = useState(false);
     const [comparisonStatus, setComparisonStatus] = useState({ busy: false, error: "" });
@@ -413,7 +420,7 @@ if (hit1 === -1) {
   
     if (!width) {
       return (
-        <div className="w-full h-full p-5">
+        <div className="gensplore w-full h-full p-5">
           <div ref={ref} className="w-full h-full" />
         </div>
       );
@@ -421,30 +428,30 @@ if (hit1 === -1) {
   
 
     return (<>
-      <div onContextMenu={handleContextMenu}>
+      <div className="gensplore" onContextMenu={handleContextMenu}>
     <Dialog
     open={configModalOpen}
     onClose={() => setConfigModalOpen(false)}
-    className="fixed z-50 max-w-2xl px-4 py-6 bg-white rounded-lg shadow-xl sm:px-6 sm:py-8 sm:pb-4 sm:pt-6"
+    className="gensplore fixed z-50 max-w-2xl px-4 py-6 bg-white rounded-lg shadow-xl sm:px-6 sm:py-8 sm:pb-4 sm:pt-6"
   >
   
-    <Dialog.Panel
-      className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-75 transition-opacity"
+    <DialogPanel
+      className="fixed inset-0 flex items-center justify-center bg-gray-500/75 transition-opacity"
       style={{ zIndex: 1000 }}
     >
       <div className="bg-white rounded-lg px-4 py-4 sm:px-6 sm:py-6 shadow-md max-w-md mx-auto">
-        <Dialog.Title
+        <DialogTitle
           as="h3"
           className="text-lg font-medium leading-6 text-gray-900 mb-4"
         >
         Settings
-        </Dialog.Title>
+        </DialogTitle>
   
-        <Dialog.Description
+        <Description
           className="text-base text-gray-600 mb-4"
         >
           Customize appearance
-        </Dialog.Description>
+        </Description>
   
         <p className="text-sm text-gray-500">
         <label>
@@ -456,14 +463,14 @@ if (hit1 === -1) {
         <div className="mt-4 flex justify-end">
           <button
             type="button"
-            className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+            className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
             onClick={() => setConfigModalOpen(false)}
           >
             Close
           </button>
           </div>
       </div>
-    </Dialog.Panel>
+    </DialogPanel>
   </Dialog>
   
   
@@ -502,7 +509,7 @@ if (hit1 === -1) {
                 // small logo on left, name and definition on right
               }
               {whereMouseWentDown !== null && (whereMouseWentUp !== null || whereMouseCurrentlyIs !== null) && (
-                <div className="fixed bottom-1 left-1 z-10 px-3 py-2 text-sm rounded-lg shadow-lg bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200">
+                <div className="fixed bottom-1 left-1 z-10 px-3 py-2 text-sm rounded-lg shadow-lg bg-linear-to-r from-gray-50 to-gray-100 border border-gray-200">
                   <div className="flex flex-col ">
                     <div className="flex items-center space-x-2">
                       <span className="font-medium text-gray-700">Selection:</span>
