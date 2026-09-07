@@ -128,6 +128,7 @@ const SingleRow = ({
   curSeqHitIndex,
   enableRC,
   visibleFeatures,
+  differences = [],
 }) => {
   const zoomFactor = 2 ** zoomLevel;
   const sep = 10 * zoomFactor;
@@ -692,6 +693,13 @@ const SingleRow = ({
           stroke="black"
         />
 
+        {/* Reference-relative differences; insertions are anchored to a boundary. */}
+        <g>{differences.filter(d => (d.start < rowEnd || (d.start === fullSequence.length && rowEnd === fullSequence.length)) && (d.end > rowStart || (d.type === 'Insertion' && d.start >= rowStart) || (d.start === fullSequence.length && rowEnd === fullSequence.length))).map((d, i) => <rect key={i}
+          x={extraPadding + (Math.max(rowStart, Math.min(d.start, fullSequence.length - 1)) - rowStart) * sep - sep / 2}
+          y={height - 57} width={Math.max(3, (Math.min(rowEnd, d.end) - Math.max(rowStart, d.start)) * sep)} height={18}
+          fill={d.type === 'Deletion' ? '#ef4444' : d.type === 'Insertion' ? '#3b82f6' : '#f59e0b'} fillOpacity={0.35}>
+          <title>{d.type}: {d.reference || '—'} → {d.alternative || '—'}</title>
+        </rect>)}</g>
         {/* Forward sequence */}
         <g transform={`translate(${extraPadding}, ${height - 55})`}>
           {chars}

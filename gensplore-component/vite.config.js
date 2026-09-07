@@ -4,7 +4,7 @@ import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 
 export default defineConfig({
   worker: {
-    format: "umd",
+    format: "es",
   },
   plugins: [
     react(), 

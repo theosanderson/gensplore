@@ -63,3 +63,9 @@ As a  component:
 
 ```
 
+
+Pass an optional `fastaUrl` string to `GensploreView` to load an alternative DNA
+FASTA for comparison with the GenBank reference. The viewer also offers a local
+file picker and URL input. Alignment runs in a browser worker; results show
+reference-relative differences only, without effect predictions. See the root
+README for alignment limits and coordinate conventions.

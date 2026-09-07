@@ -11,6 +11,7 @@ import "../App.css"
 import Offcanvas from './Offcanvas';
 import ContextMenu from './ContextMenu';
 
+import ComparisonPanel from "./ComparisonPanel";
 import Tooltip from "./Tooltip";
 import { getReverseComplement, filterFeatures } from "../utils";
 import SingleRow from "./SingleRow";
@@ -22,7 +23,8 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { ToastContainer, toast } from "react-toastify";
 import SearchPanel from "../SearchPanel";
 
-function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCallback }) {
+function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCallback, fastaUrl }) {
+    const [comparison, setComparison] = useState(null);
     const [searchPanelOpen, setSearchPanelOpen] = useState(false);
     const [zoomLevel, setRawZoomLevel] = useState(0);
     const [whereMouseWentDown, setWhereMouseWentDown] = useState(null);
@@ -76,10 +78,12 @@ function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCal
     }, [whereOnPage]);
   
     useEffect(() => {
+      let cancelled = false;
+      setGenbankData(null);
       const loadGenbankString = async () => {
         try {
           const genbankObject = await genbankToJson(genbankString);
-          console.log("GenBank file loaded:", genbankObject);
+          if (cancelled) return;
           // to uppercase
           genbankObject[0].parsedSequence.sequence =
             genbankObject[0].parsedSequence.sequence.toUpperCase();
@@ -92,7 +96,8 @@ function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCal
         }
       };
       loadGenbankString();
-    }, []);
+      return () => { cancelled = true; };
+    }, [genbankString]);
   
     // detect ctrl-F and open search panel
     useEffect(() => {
@@ -158,16 +163,22 @@ function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCal
     }, [fullSequence, rowWidth, sequenceLength]);
   
     const parentRef = useRef(null);
-    const parentOffsetRef = useRef(0);
+    const [parentOffset, setParentOffset] = useState(0);
   
     useLayoutEffect(() => {
-      parentOffsetRef.current = parentRef.current?.offsetTop ?? 0;
-    }, []);
+      const element = parentRef.current;
+      if (!element) return;
+      const updateOffset = () => setParentOffset(element.getBoundingClientRect().top + window.scrollY);
+      updateOffset();
+      const observer = new ResizeObserver(updateOffset);
+      observer.observe(element.parentElement);
+      return () => observer.disconnect();
+    }, [genbankData, width]);
   
     const rowVirtualizer = useWindowVirtualizer({
       count: rowData.length,
       estimateSize: () => 90,
-      scrollMargin: parentOffsetRef.current,
+      scrollMargin: parentOffset,
     });
   
     const virtualItems = rowVirtualizer.getVirtualItems();
@@ -510,6 +521,7 @@ if (hit1 === -1) {
                   </div>
                 </div>
               </div>
+              <ComparisonPanel reference={fullSequence} fastaUrl={fastaUrl} onResult={setComparison} onGoTo={(position) => rowVirtualizer.scrollToIndex(Math.floor(position / rowWidth), { align: "center" })} />
               <div ref={parentRef} className="mt-5 h-80">
                 <div
                   style={{
@@ -526,7 +538,7 @@ if (hit1 === -1) {
                       left: 0,
                       width: "100%",
                       transform: `translateY(${
-                        virtualItems[0].start -
+                        (virtualItems[0]?.start ?? 0) -
                         rowVirtualizer.options.scrollMargin
                       }px)`,
                     }}
@@ -545,6 +557,7 @@ if (hit1 === -1) {
                             key={virtualitem.index}
                             parsedSequence={genbankData.parsedSequence}
                             visibleFeatures={visibleFeatures}
+                            differences={comparison?.differences || []}
                             rowStart={row.rowStart}
                             rowEnd={row.rowEnd}
                             rowWidth={rowWidth}

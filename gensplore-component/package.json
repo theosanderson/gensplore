@@ -57,6 +57,7 @@
     "react-dom": "^18.2.0"
   },
   "main": "dist/gensplore.umd.js",
+  "module": "dist/gensplore.es.js",
   "files": [
     "dist"
   ],
