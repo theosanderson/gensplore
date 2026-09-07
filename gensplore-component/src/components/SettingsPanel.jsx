@@ -9,7 +9,7 @@ import { PiTagChevronFill } from "react-icons/pi";
 const SettingsPanel = ({ zoomLevel, setZoomLevel, configModalOpen, setConfigModalOpen, setFeatureOffcanvasOpen, comparisonPanelOpen, setComparisonPanelOpen, comparisonCount, comparisonStatus }) => {
   return (
     <>
-      <button className="comparison-toolbar-button" type="button" aria-label="Compare FASTA"
+      <button className="comparison-toolbar-button text-gray-400 hover:text-gray-600" type="button" aria-label="Compare FASTA"
         aria-expanded={comparisonPanelOpen} aria-controls="comparison-drawer-panel"
         title={comparisonStatus?.error || (comparisonStatus?.busy ? "Aligning FASTA…" : comparisonCount !== undefined ? `Compare FASTA (${comparisonCount} differences)` : "Compare an alternative FASTA")}
         onClick={() => setComparisonPanelOpen(true)}>

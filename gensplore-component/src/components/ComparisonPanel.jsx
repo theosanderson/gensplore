@@ -91,9 +91,9 @@ export default function ComparisonPanel({ reference, features, fastaUrl, aligned
         <button type="button" onClick={() => setOpen(false)} aria-label="Close comparison">×</button>
       </div>
       <section className="comparison-panel" aria-label="Compare FASTA">
-    {!alignedSequence && <><label>FASTA file <input type="file" accept=".fa,.fasta,.fna,.txt" onChange={e => { loadFile(e.target.files[0]); e.target.value = ''; }} /></label>
+    {!alignedSequence && <><label className="comparison-field">FASTA file <input type="file" accept=".fa,.fasta,.fna,.txt" onChange={e => { loadFile(e.target.files[0]); e.target.value = ''; }} /></label>
     <form onSubmit={e => { e.preventDefault(); setSource(url.trim()); setRequest(value => value + 1); }}>
-      <label>FASTA URL <input type="text" inputMode="url" className="comparison-url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://example.org/alternative.fasta" required /></label>
+      <label className="comparison-field">FASTA URL <input type="text" inputMode="url" className="comparison-url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://example.org/alternative.fasta" required /></label>
       <button type="submit">Load URL</button>
     </form>
     {(fasta !== null || source || result || error || busy) && <button onClick={() => { generation.current++; setSource(''); setFasta(null); setBusy(false); clear(); }}>Clear</button>}
