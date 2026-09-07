@@ -12,10 +12,12 @@ const temporary = await mkdtemp(join(tmpdir(), 'gensplore-package-'));
 const run = (command, args, cwd) => execFileSync(command, args, { cwd, stdio: 'inherit' });
 let browser;
 try {
-  const pack = JSON.parse(execFileSync('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', temporary], { cwd: root, encoding: 'utf8' }))[0];
+  const packResult = JSON.parse(execFileSync('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', temporary], { cwd: root, encoding: 'utf8' }));
+  const pack = Array.isArray(packResult) ? packResult[0] : packResult.gensplore;
   const packedFiles = pack.files.map(file => file.path);
-  for (const required of ['dist/gensplore.js', 'dist/gensplore.cjs', 'dist/index.d.ts', 'dist/index.d.cts']) assert(packedFiles.includes(required), required);
-  assert(packedFiles.every(path => /^(dist\/|package.json$|README.md$|LICENSE)/.test(path)), 'Only distributable files should be packed');
+  const requiredFiles = ['dist/gensplore.js', 'dist/gensplore.cjs', 'dist/index.d.ts', 'dist/index.d.cts'];
+  for (const required of requiredFiles) assert(packedFiles.includes(required), required);
+  assert(packedFiles.every(path => requiredFiles.includes(path) || /^(package.json|README.md|LICENSE.*)$/.test(path)), 'Only library outputs and package metadata should be packed');
   browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined });
   for (const reactVersion of (process.env.REACT_VERSION ? [process.env.REACT_VERSION] : ['18.3.1', '19.2.8'])) {
     const fixture = join(temporary, `react-${reactVersion}`);

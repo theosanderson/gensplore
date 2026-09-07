@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   release:
@@ -20,6 +21,8 @@ jobs:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
+      - name: Install npm with trusted publishing support
+        run: npm install --global npm@12.0.2
       - name: Enable the pinned Yarn version
         run: |
           npm install --global corepack@0.36.0
@@ -34,7 +37,5 @@ jobs:
       - run: yarn build
         env:
           NODE_OPTIONS: --max-old-space-size=4096
-      - name: Publish
+      - name: Publish with npm trusted publishing
         run: npm publish --ignore-scripts --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
