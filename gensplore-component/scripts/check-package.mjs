@@ -62,6 +62,15 @@ try {
       await page.keyboard.press('Control+f');
       await page.locator('#search-input').fill('AAA');
       await page.getByText(/Hit 1 of/).waitFor();
+      await page.getByRole('button', { name: 'Use aligned sequence', exact: true }).click();
+      await page.getByRole('heading', { name: 'Aligned preview', exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Compare FASTA' }).click();
+      await page.getByRole('cell', { name: 'Insertion', exact: true }).waitFor();
+      await page.getByRole('cell', { name: 'Ambiguous', exact: true }).waitFor();
+      assert.equal(await page.getByLabel('FASTA URL').count(), 0);
+      await page.getByRole('button', { name: 'Close comparison' }).click();
+      await page.getByRole('button', { name: 'Remove aligned sequence', exact: true }).click();
+      await page.getByRole('heading', { name: 'Aligned preview', exact: true }).waitFor({ state: 'detached' });
       assert.deepEqual(errors, [], 'No browser errors');
       await page.close();
       console.log(`Packaged component passed with React ${reactVersion}`);

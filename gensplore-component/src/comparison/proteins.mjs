@@ -60,8 +60,10 @@ export function compareProtein(reference, feature, differences) {
       }
       if (affected.length % 3) frameIndex = Math.min(frameIndex, ...affected);
     } else {
-      const index = codingIndex.get(d.start);
-      if (index !== undefined) replacements.set(index, orient(d.alternative));
+      for (let position = d.start; position < d.end; position++) {
+        const index = codingIndex.get(position);
+        if (index !== undefined) replacements.set(index, orient(d.alternative[position - d.start]));
+      }
     }
   }
   let alternateDna = '';
