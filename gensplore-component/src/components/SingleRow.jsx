@@ -263,7 +263,7 @@ const SingleRow = ({
       : ((start + end - 1) / 2 - rowStart) * sep;
     const label = insertion ? `INS +${d.alternative}`
       : d.type === 'Deletion' ? `DEL ${d.reference}`
-      : d.type === 'Ambiguous' ? `? ${d.reference} → ${d.alternative}`
+      : d.type === 'Ambiguous' ? 'Coverage gap'
       : `${d.reference} → ${d.alternative}`;
     const maxCharacters = Math.max(8, Math.floor((changeLabelWidth - 20) / 7));
     const displayLabel = label.length > maxCharacters ? `${label.slice(0, maxCharacters - 1)}…` : label;
@@ -278,7 +278,7 @@ const SingleRow = ({
       : d.type === 'Ambiguous' ? '#f5f3ff' : '#fffbeb';
     const position = insertion ? `after reference base ${d.start}`
       : `reference ${d.start + 1}${d.end > d.start + 1 ? `–${d.end}` : ''}`;
-    const description = `${d.type} at ${position}: ${d.reference || '—'} → ${d.alternative || '—'}`;
+    const description = d.type === 'Ambiguous' ? `Coverage gap at ${position}` : `${d.type} at ${position}: ${d.reference || '—'} → ${d.alternative || '—'}`;
     return { ...d, start, end, anchor, displayLabel, labelWidth, left, lane, color, background, description };
   });
   const changeTrackHeight = changeLabels.length ? 18 + changeLaneEnds.length * 28 : 0;
@@ -346,6 +346,11 @@ const SingleRow = ({
     );
   });
 
+  const coverageGapBases = new Set();
+  rowDifferences.filter(d => d.type === 'Ambiguous').forEach(d => {
+    for (let position = Math.max(rowStart, d.start); position < Math.min(rowEnd, d.end); position++) coverageGapBases.add(position);
+  });
+
   // Sequence
   let chars = null;
   let chars2 = null;
@@ -361,7 +366,7 @@ const SingleRow = ({
           fontSize={zoomLevel < -1 ? "11" : "12"}
           fontFamily={zoomLevel < -0.25 ? "Open Sans Condensed" : "sans-serif"}
           fontWeight={zoomLevel < -0.25 ? "600" : "400"}
-          fillOpacity={0.9}
+          fillOpacity={coverageGapBases.has(rowStart + i) ? 0.35 : 0.9}
           onMouseEnter={() =>
             setHoveredInfo({
               label: `Nucleotide ${i + rowStart + 1}: ${char}`,
@@ -388,7 +393,7 @@ const SingleRow = ({
           fontSize={zoomLevel < -1 ? "11" : "12"}
           fontFamily={zoomLevel < -0.25 ? "Open Sans Condensed" : "sans-serif"}
           fontWeight={zoomLevel < -0.25 ? "600" : "400"}
-          fillOpacity={0.9}
+          fillOpacity={coverageGapBases.has(rowStart + i) ? 0.35 : 0.9}
           onMouseEnter={() =>
             setHoveredInfo({
               label: `Nucleotide ${i + rowStart + 1}: ${char}`,
