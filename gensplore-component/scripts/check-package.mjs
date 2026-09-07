@@ -12,7 +12,8 @@ const temporary = await mkdtemp(join(tmpdir(), 'gensplore-package-'));
 const run = (command, args, cwd) => execFileSync(command, args, { cwd, stdio: 'inherit' });
 let browser;
 try {
-  const pack = JSON.parse(execFileSync('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', temporary], { cwd: root, encoding: 'utf8' }))[0];
+  const packResult = JSON.parse(execFileSync('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', temporary], { cwd: root, encoding: 'utf8' }));
+  const pack = Array.isArray(packResult) ? packResult[0] : packResult.gensplore;
   const packedFiles = pack.files.map(file => file.path);
   const requiredFiles = ['dist/gensplore.js', 'dist/gensplore.cjs', 'dist/index.d.ts', 'dist/index.d.cts'];
   for (const required of requiredFiles) assert(packedFiles.includes(required), required);
