@@ -13,86 +13,74 @@
     "directory": "gensplore-component"
   },
   "devDependencies": {
-    "@headlessui/react": "^1.7.16",
-    "@storybook/addon-essentials": "^7.5.3",
-    "@storybook/addon-interactions": "^7.5.3",
-    "@storybook/addon-links": "^7.5.3",
-    "@storybook/addon-onboarding": "^1.0.8",
-    "@storybook/blocks": "^7.5.3",
-    "@storybook/react": "^7.5.3",
-    "@storybook/react-vite": "^7.5.3",
-    "@storybook/testing-library": "^0.2.2",
-    "@tanstack/react-virtual": "^3.0.0-beta.48",
-    "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@vitejs/plugin-react": "^4.2.0",
-    "autoprefixer": "^10.4.13",
-    "bio-parsers": "^9.3.0",
+    "@fontsource/open-sans": "^5.3.0",
+    "@fontsource/open-sans-condensed": "^4.5.5",
+    "@headlessui/react": "^2.2.10",
+    "@playwright/test": "^1.63.0",
+    "@storybook/addon-docs": "^10.6.0",
+    "@storybook/addon-links": "^10.6.0",
+    "@storybook/react-vite": "^10.6.0",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@tanstack/react-virtual": "^3.14.11",
+    "@teselagen/bio-parsers": "^0.4.38",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
     "color-hash": "^2.0.2",
-    "eslint-plugin-storybook": "^0.6.15",
-    "postcss": "^8.4.21",
-    "prop-types": "^15.8.1",
-    "qs": "^6.11.0",
-    "rc-slider": "^10.1.1",
-    "react": "^18.2.0",
-    "react-debounce-input": "^3.3.0",
-    "react-dom": "^18.2.0",
-    "react-icons": "^4.7.1",
-    "react-router-dom": "^6.8.1",
-    "react-spinners": "^0.13.8",
-    "react-toastify": "^9.1.1",
-    "react-tooltip": "^5.7.5",
-    "react-use": "^17.4.0",
-    "storybook": "^7.5.3",
-    "tailwindcss": "^3.2.6",
-    "ve-range-utils": "^2.6.6",
-    "ve-sequence-utils": "^5.2.9",
-    "vite": "^5.0.2",
-    "vite-plugin-css-injected-by-js": "^3.3.0",
-    "web-vitals": "^2.1.4"
+    "events": "^3.3.0",
+    "postcss": "^8.5.28",
+    "postcss-prefix-selector": "^2.2.1",
+    "rc-slider": "^11.1.9",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-icons": "^5.7.0",
+    "react-toastify": "^11.1.0",
+    "react-use": "^17.6.1",
+    "rolldown": "^1.2.7",
+    "storybook": "^10.6.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "vite-plugin-css-injected-by-js": "^5.0.2"
   },
   "peerDependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "^18.3.1 || ^19.0.0",
+    "react-dom": "^18.3.1 || ^19.0.0"
   },
-  "main": "dist/gensplore.umd.js",
-  "module": "dist/gensplore.es.js",
+  "main": "./dist/gensplore.cjs",
+  "module": "./dist/gensplore.js",
   "files": [
     "dist"
   ],
   "scripts": {
     "start": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/copy-types.mjs",
     "serve": "vite preview",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "test": "node --test src/comparison/*.test.mjs",
+    "prepack": "yarn build",
+    "test:package": "yarn build && node scripts/check-package.mjs",
+    "test:previews": "node scripts/check-previews.mjs"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest",
-      "plugin:storybook/recommended"
-    ]
+  "packageManager": "yarn@4.18.0",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/gensplore.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/gensplore.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
-  "packageManager": "yarn@4.0.2+sha512.4e502bea682e7d8004561f916f1da2dfbe6f718024f6aa50bf8cd86f38ea3a94a7f1bf854a9ca666dd8eafcfb8d44baaa91bf5c7876e79a7aeac952c332f0e88",
-  "dependencies": {
-    "@fontsource/inter": "^5.1.0",
-    "@fontsource/inter-tight": "^5.1.0",
-    "@fontsource/open-sans": "^5.1.0",
-    "@fontsource/open-sans-condensed": "^4.5.5",
-    "@fontsource/roboto-condensed": "^5.1.0"
+  "sideEffects": true,
+  "resolutions": {
+    "@babel/runtime": "^7.29.7"
   }
 }

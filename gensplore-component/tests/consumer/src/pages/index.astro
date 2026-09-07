@@ -1,0 +1,11 @@
+---
+import { readFile } from 'node:fs/promises';
+import Viewer from '../Viewer';
+const genbankString = await readFile(new URL('../../../public/reference.gb', import.meta.url), 'utf8');
+---
+<html lang="en"><head><title>Packaged Gensplore test</title></head>
+<body>
+  <h1 id="host-heading">Host application</h1>
+  <button id="host-button" class="p-5">Host button</button>
+  <Viewer genbankString={genbankString} client:only="react" />
+</body></html>

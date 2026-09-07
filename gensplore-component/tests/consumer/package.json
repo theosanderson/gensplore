@@ -1,0 +1,18 @@
+{
+  "name": "gensplore-consumer-check",
+  "private": true,
+  "type": "module",
+  "scripts": {"build": "astro build", "check": "tsc --noEmit"},
+  "dependencies": {
+    "astro": "7.2.9",
+    "@astrojs/react": "6.0.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "typescript": "5.9.3",
+    "vite": "8.2.2"
+  }
+}

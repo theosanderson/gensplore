@@ -10,7 +10,7 @@ const Offcanvas = ({ isOpen, onClose, children }) => {
     }>
       <div className="absolute inset-0 overflow-hidden">
         {/* Background overlay */}
-        <div className="absolute inset-0 bg-gray-500 bg-opacity-50 transition-opacity" onClick={onClose}></div>
+        <div className="absolute inset-0 bg-gray-500/50 transition-opacity" onClick={onClose}></div>
 
         {/* Offcanvas Panel from Bottom */}
         <section className="absolute  bottom-0 w-full"

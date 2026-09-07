@@ -3,9 +3,9 @@ import { featureLocations, clipFeatureLocations, proteinChangeRowPosition } from
 import { getReverseComplement, filterFeatures } from "../utils";
 import getColor from "../utils/getColor";
 import codonToAminoAcid from "../utils/codonMapping";
-import { toast } from "react-toastify";
-import "@fontsource/open-sans";
-import "@fontsource/open-sans-condensed";
+import { toast } from "react-toastify/unstyled";
+import "@fontsource/open-sans/latin-400.css";
+import "@fontsource/open-sans-condensed/latin-300.css";
 
 const SHARP_POINT_OFFSET = 6;
 const BLUNT_POINT_OFFSET = 1;

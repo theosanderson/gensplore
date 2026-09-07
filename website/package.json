@@ -1,58 +1,29 @@
 {
-  "name": "genbank_view",
+  "name": "gensplore-website",
   "version": "0.1.0",
   "private": true,
-  "dependencies": {
-    "@headlessui/react": "^1.7.16",
-    "@tanstack/react-virtual": "^3.0.0-beta.48",
-    "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@vitejs/plugin-react": "^4.2.0",
-    "autoprefixer": "^10.4.13",
-    "bio-parsers": "^9.3.0",
-    "color-hash": "^2.0.2",
-    "postcss": "^8.4.21",
-    "qs": "^6.11.0",
-    "rc-slider": "^10.1.1",
-    "react": "^18.2.0",
-    "react-debounce-input": "^3.3.0",
-    "react-dom": "^18.2.0",
-    "react-icons": "^4.7.1",
-    "react-router-dom": "^6.8.1",
-    "react-spinners": "^0.13.8",
-    "react-toastify": "^9.1.1",
-    "react-tooltip": "^5.7.5",
-    "react-use": "^17.4.0",
-    "tailwindcss": "^3.2.6",
-    "ve-range-utils": "^2.6.6",
-    "ve-sequence-utils": "^5.2.9",
-    "vite": "^5.0.2",
-    "web-vitals": "^2.1.4",
-    "gensplore" : "file:../gensplore-component"
-  },
+  "type": "module",
+  "packageManager": "yarn@4.18.0",
   "scripts": {
     "start": "vite",
-    "build": "vite build",
-    "preinstall": "cd ../gensplore-component && yarn install && yarn build",
-    "serve": "vite preview"
+    "build": "yarn build:component && vite build",
+    "serve": "vite preview",
+    "build:component": "yarn --cwd ../gensplore-component install --immutable && yarn --cwd ../gensplore-component build"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+  "dependencies": {
+    "gensplore": "portal:../gensplore-component",
+    "qs": "^6.16.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-icons": "^5.7.0",
+    "react-router-dom": "^7.18.3",
+    "react-spinners": "^0.17.1"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@vitejs/plugin-react": "^6.1.1",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.2.2"
   }
 }

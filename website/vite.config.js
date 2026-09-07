@@ -5,6 +5,7 @@ export default defineConfig({
     // depending on your application, base can also be "/"
     base: '',
     plugins: [react()],
+    resolve: { dedupe: ["react", "react-dom"] },
    define: {
     global: {},
    },
