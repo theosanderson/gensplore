@@ -1,0 +1,23 @@
+{
+  "name": "gensplore-workspace",
+  "private": true,
+  "workspaces": [
+    "gensplore-component",
+    "website"
+  ],
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "start": "npm run start --workspace=gensplore-website",
+    "build": "npm run build --workspace=gensplore-website",
+    "build:component": "npm run build --workspace=gensplore",
+    "test": "npm test --workspace=gensplore",
+    "test:package": "npm run test:package --workspace=gensplore",
+    "build-storybook": "npm run build-storybook --workspace=gensplore",
+    "test:previews": "npm run test:previews --workspace=gensplore"
+  },
+  "overrides": {
+    "@babel/runtime": "^7.29.7"
+  }
+}

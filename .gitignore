@@ -1,11 +1,9 @@
 .aider*
 .env
-gensplore-component/.yarn/install-state.gz
 
 node_modules/
 dist/
 
-**/.yarn/install-state.gz
 **/storybook-static/
 **/test-results/
 **/playwright-report/

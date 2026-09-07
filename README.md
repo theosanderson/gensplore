@@ -59,3 +59,9 @@ Source: [NCBI NC_001422.1](https://www.ncbi.nlm.nih.gov/nuccore/NC_001422.1),
 downloaded 2026-09-07. Additional tests use artificial sequences to exercise edits.
 Run the alignment tests with:
 `node --test gensplore-component/src/comparison/*.test.mjs`.
+
+### Development
+
+With Node.js 24, run `npm ci` at the repository root. `npm run build` builds
+the component and website; `npm start` serves the website. Run `npm test` for
+unit tests and `npm run test:package` for packaged React compatibility checks.

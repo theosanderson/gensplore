@@ -23,18 +23,14 @@ jobs:
           package-manager-cache: false
       - name: Install npm with trusted publishing support
         run: npm install --global npm@12.0.2
-      - name: Enable the pinned Yarn version
-        run: |
-          npm install --global corepack@0.36.0
-          corepack enable
-          yarn --version
-      - run: yarn install --immutable
-      - run: yarn test
+      - run: npm ci
+        working-directory: .
+      - run: npm test
       - name: Set the release version
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: npm version "${RELEASE_TAG#v}" --no-git-tag-version
-      - run: yarn build
+      - run: npm run build
         env:
           NODE_OPTIONS: --max-old-space-size=4096
       - name: Publish with npm trusted publishing
