@@ -18,7 +18,7 @@ import { getReverseComplement, filterFeatures } from "../utils";
 import SingleRow from "./SingleRow";
 import SettingsPanel from "./SettingsPanel";
 import { Dialog, DialogPanel, DialogTitle, Description } from "@headlessui/react";
-import { genbankToJson } from "@teselagen/bio-parsers";
+import { parseReference } from "../comparison/parseReference.mjs";
 import { useMeasure } from "react-use"; // or just 'react-use-measure'
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { ToastContainer, toast } from "react-toastify/unstyled";
@@ -94,11 +94,8 @@ function GensploreView({ genbankString, searchInput: controlledSearchInput, setS
       setCurSeqHitIndex(0);
       const loadGenbankString = async () => {
         try {
-          const genbankObject = await genbankToJson(genbankString);
+          const genbankObject = await parseReference(genbankString);
           if (cancelled) return;
-          // to uppercase
-          genbankObject[0].parsedSequence.sequence =
-            genbankObject[0].parsedSequence.sequence.toUpperCase();
           setGenbankData(genbankObject[0]);
         } catch (error) {
           console.error("Error loading GenBank file:", error);
