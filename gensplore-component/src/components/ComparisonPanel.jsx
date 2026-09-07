@@ -35,6 +35,14 @@ export default function ComparisonPanel({ reference, features, fastaUrl, onResul
       try {
         const parsed = new URL(source, window.location.href);
         if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Use an HTTP or HTTPS URL.');
+        const hostname = parsed.hostname.toLowerCase();
+        const ipv4 = hostname.match(/^(\d{1,3})\.(\d{1,3})\.\d{1,3}\.\d{1,3}$/);
+        const isBlockedHost = hostname === 'localhost' || hostname === '0.0.0.0' || hostname === '::1' ||
+          (ipv4 && (Number(ipv4[1]) === 10 || Number(ipv4[1]) === 127 ||
+            (Number(ipv4[1]) === 172 && Number(ipv4[2]) >= 16 && Number(ipv4[2]) <= 31) ||
+            (Number(ipv4[1]) === 192 && Number(ipv4[2]) === 168) ||
+            (Number(ipv4[1]) === 169 && Number(ipv4[2]) === 254)));
+        if (isBlockedHost) throw new Error('URL host is not allowed.');
         const response = await fetch(parsed, { signal: controller.signal });
         if (!response.ok) throw new Error(`FASTA request failed (${response.status}).`);
         const text = await response.text();
