@@ -19,7 +19,7 @@
 .comparison-panel h3 { font-weight: 600; font-size: 16px; }
 .comparison-panel p { margin: 8px 0; max-width: 900px; }
 .comparison-panel form { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
-.comparison-panel input[type=url] { border: 1px solid #9ca3af; padding: 6px; width: min(420px, 65vw); }
+.comparison-panel .comparison-url { border: 1px solid #9ca3af; padding: 6px; width: min(420px, 65vw); }
 .comparison-panel button { padding: 4px 10px; border: 1px solid #9ca3af; border-radius: 4px; background: #f3f4f6; }
 .comparison-panel [role=alert] { color: #b91c1c; }
 .comparison-table { max-height: 260px; overflow: auto; }
@@ -27,3 +27,15 @@
 .comparison-table td, .comparison-table th { padding: 6px 10px; border-bottom: 1px solid #e5e7eb; max-width: 280px; overflow-wrap: anywhere; }
 
 .comparison-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+
+.comparison-toolbar { display: flex; align-items: center; gap: 14px; width: 410px; max-width: calc(100vw - 8px); min-height: 48px; }
+.comparison-toolbar > button { flex-shrink: 0; }
+.comparison-toolbar-button { border: 1px solid #cbd5e1; border-radius: 5px; padding: 5px 8px; font-size: 13px; color: #334155; background: #f8fafc; }
+.comparison-drawer { position: fixed; inset: 0; z-index: 40; }
+.comparison-drawer-overlay { position: fixed; inset: 0; background: rgb(15 23 42 / 25%); }
+.comparison-drawer-content { position: fixed; top: 0; right: 0; bottom: 0; width: min(650px, 100vw); background: white; box-shadow: -8px 0 30px rgb(15 23 42 / 15%); overflow-y: auto; }
+.comparison-drawer-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid #e2e8f0; }
+.comparison-drawer-header h2 { font-size: 20px; font-weight: 600; }
+.comparison-drawer-header button { padding: 5px 10px; border-radius: 5px; border: 1px solid #cbd5e1; }
+.comparison-drawer .comparison-panel { margin: 0; padding: 16px 20px; border: 0; }
+.comparison-drawer .comparison-panel .comparison-url { width: min(410px, calc(100vw - 60px)); }

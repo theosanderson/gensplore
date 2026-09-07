@@ -25,6 +25,8 @@ import SearchPanel from "../SearchPanel";
 
 function GensploreView({ genbankString, searchInput, setSearchInput, setTitleCallback, fastaUrl }) {
     const [comparison, setComparison] = useState(null);
+    const [comparisonPanelOpen, setComparisonPanelOpen] = useState(false);
+    const [comparisonStatus, setComparisonStatus] = useState({ busy: false, error: "" });
     const [searchPanelOpen, setSearchPanelOpen] = useState(false);
     const [zoomLevel, setRawZoomLevel] = useState(0);
     const [whereMouseWentDown, setWhereMouseWentDown] = useState(null);
@@ -475,9 +477,11 @@ if (hit1 === -1) {
           </div>
         )}
   
-        <div className="fixed bottom-0 right-0 z-10 w-72 h-12 p-2 rounded shadow bg-white">
+        <div className="fixed bottom-0 right-0 z-10 p-2 rounded shadow bg-white comparison-toolbar">
           <SettingsPanel zoomLevel={zoomLevel} setZoomLevel={setZoomLevel} configModalOpen={configModalOpen} setConfigModalOpen={setConfigModalOpen}
-          setFeatureOffcanvasOpen={setFeatureOffcanvasOpen} />
+          setFeatureOffcanvasOpen={setFeatureOffcanvasOpen}
+          comparisonPanelOpen={comparisonPanelOpen} setComparisonPanelOpen={setComparisonPanelOpen}
+          comparisonCount={comparison?.differences.length} comparisonStatus={comparisonStatus} />
         </div>
   
         <div className="w-full">
@@ -521,7 +525,7 @@ if (hit1 === -1) {
                   </div>
                 </div>
               </div>
-              <ComparisonPanel reference={fullSequence} fastaUrl={fastaUrl} onResult={setComparison} onGoTo={(position) => rowVirtualizer.scrollToIndex(Math.floor(position / rowWidth), { align: "center" })} />
+              <ComparisonPanel open={comparisonPanelOpen} setOpen={setComparisonPanelOpen} onStatus={setComparisonStatus} reference={fullSequence} features={genbankData.parsedSequence.features} fastaUrl={fastaUrl} onResult={setComparison} onGoTo={(position) => rowVirtualizer.scrollToIndex(Math.floor(position / rowWidth), { align: "center" })} />
               <div ref={parentRef} className="mt-5 h-80">
                 <div
                   style={{
@@ -558,6 +562,7 @@ if (hit1 === -1) {
                             parsedSequence={genbankData.parsedSequence}
                             visibleFeatures={visibleFeatures}
                             differences={comparison?.differences || []}
+                            proteins={comparison?.proteins}
                             rowStart={row.rowStart}
                             rowEnd={row.rowEnd}
                             rowWidth={rowWidth}

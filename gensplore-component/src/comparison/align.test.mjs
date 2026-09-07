@@ -68,3 +68,20 @@ test('bundled phiX174 FASTA matches its GenBank reference', async () => {
   assert.equal(record.sequence, reference);
   assert.deepEqual(align(reference, record.sequence), { distance: 0, differences: [] });
 });
+
+test('equally optimal alignments prefer contiguous insertions and deletions', () => {
+  const reference = 'ATGAGGCGT';
+  const alternative = 'ATGAGGACGCGT';
+  for (const [a, b, type] of [[reference, alternative, 'Insertion'], [alternative, reference, 'Deletion']]) {
+    const result = align(a, b);
+    assert.equal(result.distance, 3);
+    assert.equal(result.differences.length, 1);
+    assert.equal(result.differences[0].type, type);
+  }
+});
+test('distinct insertions separated by matching sequence remain distinct', () => {
+  const result = align('ACGTACGTACGT', 'ACGATACGTACGAT');
+  assert.equal(result.distance, 2);
+  assert.equal(result.differences.length, 2);
+  assert.ok(result.differences.every(d => d.type === 'Insertion'));
+});

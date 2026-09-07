@@ -18,17 +18,21 @@ There is now a React component for embedding Gensplore in your own website. See 
 
 ### Comparing an alternative FASTA
 
-Load a GenBank reference, then use **Compare an alternative FASTA** to choose a
+Load a GenBank reference, then click **Compare** in the bottom-right toolbar to
+open the comparison drawer and choose a
 local `.fasta`/`.fa`/`.fna` file or load a URL. A shared link can supply both files:
 
 `/?gb=https%3A%2F%2Fexample.org%2Freference.gb&fasta=https%3A%2F%2Fexample.org%2Falternative.fasta`
 
 Remote servers must allow CORS. Local files are processed in the browser.
+The drawer retains its input and results when closed; **Go to** closes it and
+centres the requested position. URL-supplied comparisons load automatically.
 The comparison lists substitutions, insertions, deletions, and ambiguous-base
 differences, shows labelled changes on a separate track above the reference, and provides
 **Go to** navigation. Substitutions show reference → alternative, insertions use
 `INS +bases` with a pointer to the insertion boundary, and deletions use
-`DEL bases` with a strike through the deleted reference letters. Closely spaced
+`DEL bases` with a red strike through the deleted reference letters. Substituted
+reference letters have an amber strike on both DNA and AA lines. Closely spaced
 labels stack to avoid overlaps.
 Positions are 1-based reference coordinates; insertions are labelled with the
 preceding reference position (0 means before the first base).
@@ -37,13 +41,21 @@ Supply one ungapped DNA FASTA record, in the same orientation and with the same
 starting point as the reference. This is a global minimum-edit alignment for
 closely related complete sequences, limited to 100,000 bases and 128 base edits.
 Partial sequences, reverse orientations, circular rotations, and rearrangements
-are not handled automatically. Repeat regions may admit equally optimal gap
-placements. Ambiguous IUPAC symbols are compared literally and labelled separately
-from substitutions. No coding or biological effects are predicted.
+are not handled automatically. Among alignments with the same base-edit count, fewer gap openings are preferred
+so contiguous insertions/deletions remain together. Repeat regions may still admit
+equally optimal gap placements. Ambiguous IUPAC symbols are compared literally and labelled separately
+from substitutions. Amino-acid substitutions, insertions, and deletions appear above each affected
+coding ribbon, with reference protein positions and deletion strikes. Synonymous
+changes have no AA marker. Joined locations, reverse strands, and `codon_start`
+are respected. AA comparison uses literal codon translation for tables 1 and 11
+within the annotated span; initiation and extension beyond that span are not
+inferred. Frameshifts are labelled at their start, with downstream AA comparisons
+omitted. Boundary insertions and unsupported translation tables/exceptions get
+an explicit note. Biological function is not predicted.
 
 Try the bundled phiX174 reference and identical FASTA control at
 `/?gb=/phix174.gb&fasta=/phix174.fasta` (expected: zero differences).
 Source: [NCBI NC_001422.1](https://www.ncbi.nlm.nih.gov/nuccore/NC_001422.1),
 downloaded 2026-09-07. Additional tests use artificial sequences to exercise edits.
 Run the alignment tests with:
-`node --test gensplore-component/src/comparison/align.test.mjs`.
+`node --test gensplore-component/src/comparison/*.test.mjs`.

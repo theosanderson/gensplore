@@ -7,40 +7,70 @@ export function parseFasta(text) {
   return { name: lines[0].slice(1).trim() || 'Alternative', sequence };
 }
 
-// Banded global Levenshtein alignment. A result costing <= limit is globally
-// optimal: any path leaving the band must already cost more than limit.
+// Banded global alignment, minimizing base edits first and gap openings second.
+// Any path leaving the band already costs more than the allowed edit limit.
 export function align(reference, alternative, limit = 128) {
   const n = reference.length, m = alternative.length;
   if (!n || !m) throw new Error('Both sequences must contain bases.');
   if (Math.max(n, m) > 100000) throw new Error('Comparison supports sequences up to 100,000 bases.');
   const tooDifferent = () => new Error(`Sequences exceed the ${limit}-edit comparison limit. Use complete sequences in the same orientation and with the same starting point.`);
   if (Math.abs(n - m) > limit) throw tooDifferent();
-  const width = 2 * limit + 1, inf = limit + 1;
+  // A valid alignment has at most limit gap openings, so one base edit always
+  // outweighs all gap-opening tie breakers. States: diagonal, deletion, insertion.
+  const width = 2 * limit + 1, editCost = limit + 1, inf = editCost * editCost;
   const trace = new Uint8Array((n + 1) * width);
-  let previous = new Uint32Array(width).fill(inf);
-  for (let j = 0; j <= Math.min(m, limit); j++) previous[j + limit] = j;
+  const bestState = (a, b, c) => a <= b && a <= c ? 0 : b <= c ? 1 : 2;
+  let previous = new Uint32Array(width * 3).fill(inf);
+  previous[limit * 3] = 0;
+  for (let j = 1; j <= Math.min(m, limit); j++) {
+    previous[(j + limit) * 3 + 2] = j * editCost + 1;
+    trace[j + limit] = (j === 1 ? 0 : 2) << 4;
+  }
   for (let i = 1; i <= n; i++) {
-    const current = new Uint32Array(width).fill(inf);
+    const current = new Uint32Array(width * 3).fill(inf);
     for (let j = Math.max(0, i - limit); j <= Math.min(m, i + limit); j++) {
-      const k = j - i + limit;
-      if (j === 0) { current[k] = i; trace[i * width + k] = 1; continue; }
-      const diagonal = previous[k] + (reference[i - 1] === alternative[j - 1] ? 0 : 1);
-      const deletion = k + 1 < width ? previous[k + 1] + 1 : inf;
-      const insertion = k > 0 ? current[k - 1] + 1 : inf;
-      current[k] = Math.min(diagonal, deletion, insertion, inf);
-      trace[i * width + k] = current[k] === diagonal ? 0 : current[k] === deletion ? 1 : 2;
+      const k = j - i + limit, slot = k * 3;
+      if (j === 0) {
+        current[slot + 1] = i * editCost + 1;
+        trace[i * width + k] = (i === 1 ? 0 : 1) << 2;
+        continue;
+      }
+      const diagonalState = bestState(previous[slot], previous[slot + 1], previous[slot + 2]);
+      current[slot] = Math.min(inf, previous[slot + diagonalState] + (reference[i - 1] === alternative[j - 1] ? 0 : editCost));
+      let deletionState = 0, insertionState = 0;
+      if (k + 1 < width) {
+        const from = slot + 3;
+        const a = previous[from] + editCost + 1;
+        const b = previous[from + 1] + editCost;
+        const c = previous[from + 2] + editCost + 1;
+        deletionState = bestState(a, b, c);
+        current[slot + 1] = Math.min(inf, a, b, c);
+      }
+      if (k > 0) {
+        const from = slot - 3;
+        const a = current[from] + editCost + 1;
+        const b = current[from + 1] + editCost + 1;
+        const c = current[from + 2] + editCost;
+        insertionState = bestState(a, b, c);
+        current[slot + 2] = Math.min(inf, a, b, c);
+      }
+      // Three two-bit predecessor states share one byte per band cell.
+      trace[i * width + k] = diagonalState | (deletionState << 2) | (insertionState << 4);
     }
     previous = current;
   }
-  const distance = previous[m - n + limit];
+  const finalSlot = (m - n + limit) * 3;
+  let state = bestState(previous[finalSlot], previous[finalSlot + 1], previous[finalSlot + 2]);
+  const distance = Math.floor(previous[finalSlot + state] / editCost);
   if (distance > limit) throw tooDifferent();
   let i = n, j = m;
   const steps = [];
   while (i || j) {
-    const direction = i === 0 ? 2 : j === 0 ? 1 : trace[i * width + j - i + limit];
-    if (direction === 0) { steps.push([reference[--i], alternative[--j]]); }
-    else if (direction === 1) steps.push([reference[--i], '-']);
+    const predecessor = (trace[i * width + j - i + limit] >> (state * 2)) & 3;
+    if (state === 0) steps.push([reference[--i], alternative[--j]]);
+    else if (state === 1) steps.push([reference[--i], '-']);
     else steps.push(['-', alternative[--j]]);
+    state = predecessor;
   }
   steps.reverse();
   const differences = [];
