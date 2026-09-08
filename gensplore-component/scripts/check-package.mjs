@@ -70,11 +70,16 @@ try {
       await page.getByRole('button', { name: 'Compare FASTA' }).click();
       await page.getByRole('cell', { name: 'Insertion', exact: true }).waitFor();
       await page.getByRole('cell', { name: 'Ambiguous', exact: true }).waitFor();
-      await page.getByText(/Terminal Ns excluded; comparing reference positions 31–/).waitFor();
+      await page.getByText(/Terminal Ns excluded from alignment and shown as coverage gaps; comparing reference positions 31–/).waitFor();
       assert.equal(await page.getByText(/AA comparison exceeds the alignment limit/).count(), 0);
       assert.equal(await page.getByLabel('FASTA URL').count(), 0);
       await page.getByRole('button', { name: 'Close comparison' }).click();
       await page.getByText('Coverage gap', { exact: true }).first().waitFor();
+      const terminalBase = page.locator('#row-0 text[y="10"][font-size="12"]').first();
+      assert.equal(await terminalBase.getAttribute('fill-opacity'), '0.35', 'Trimmed terminal bases remain faded');
+      await terminalBase.hover();
+      await page.getByRole('tooltip').waitFor();
+      assert.match(await page.getByRole('tooltip').innerText(), /No confident call/);
       assert(await page.locator('svg text[fill-opacity="0.35"]').count() > 0, 'Coverage gap reference bases are faded');
       await page.getByRole('img', { name: /Amino acid unresolved because of ambiguous nucleotide calls/ }).first().waitFor();
       assert(await page.locator('svg text[font-size="10"][fill-opacity="0.35"]').count() > 0, 'Coverage gap amino acids are faded');

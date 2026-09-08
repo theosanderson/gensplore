@@ -47,7 +47,9 @@ Supply one ungapped DNA FASTA record, in the same orientation and with the same
 starting point as the reference. This is a global minimum-edit alignment for
 closely related sequences, limited to 100,000 bases and 256 edits within the compared span.
 Terminal Ns in the alternative are treated as missing coverage: the matching
-reference ends are excluded without shifting reference coordinates. The drawer
+reference ends are excluded from alignment without shifting reference coordinates.
+These regions remain visible as coverage-gap callouts and faded reference letters
+on both nucleotide and amino-acid tracks, including partially covered codons. The drawer
 shows the covered reference range; all-N input reports no covered bases. Protein
 comparisons exclude terminal residues touching missing coverage, including partial
 codons, without calling deletions or frameshifts. Internal Ns still count toward
