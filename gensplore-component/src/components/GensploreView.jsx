@@ -20,6 +20,7 @@ import SettingsPanel from "./SettingsPanel";
 import { Dialog, DialogPanel, DialogTitle, Description } from "@headlessui/react";
 import { parseReference } from "../comparison/parseReference.mjs";
 import { selectedSequence } from "../comparison/selection.mjs";
+import { comparisonForDisplay } from "../comparison/coverage.mjs";
 import { useMeasure } from "react-use"; // or just 'react-use-measure'
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { ToastContainer, toast } from "react-toastify/unstyled";
@@ -164,6 +165,8 @@ function GensploreView({ genbankString, searchInput: controlledSearchInput, setS
       sequenceLength = fullSequence.length;
     }
   
+    const displayComparison = useMemo(() => comparisonForDisplay(fullSequence, comparison), [fullSequence, comparison]);
+
     const rowData = useMemo(() => {
       if (!fullSequence) return [];
       const rowData = [];
@@ -580,8 +583,8 @@ if (hit1 === -1) {
                             key={virtualitem.index}
                             parsedSequence={genbankData.parsedSequence}
                             visibleFeatures={visibleFeatures}
-                            differences={comparison?.differences || []}
-                            proteins={comparison?.proteins}
+                            differences={displayComparison?.differences || []}
+                            proteins={displayComparison?.proteins}
                             rowStart={row.rowStart}
                             rowEnd={row.rowEnd}
                             rowWidth={rowWidth}
