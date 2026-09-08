@@ -1,3 +1,4 @@
+import { changeTooltip, letterTooltip } from '../comparison/tooltips.mjs';
 import ColorHash from "color-hash";
 import { featureLocations, clipFeatureLocations, proteinChangeRowPosition } from "../comparison/rowGeometry.mjs";
 import { getReverseComplement, filterFeatures } from "../utils";
@@ -276,9 +277,7 @@ const SingleRow = ({
       : d.type === 'Ambiguous' ? '#6d28d9' : '#92400e';
     const background = insertion ? '#eff6ff' : d.type === 'Deletion' ? '#fef2f2'
       : d.type === 'Ambiguous' ? '#f5f3ff' : '#fffbeb';
-    const position = insertion ? `after reference base ${d.start}`
-      : `reference ${d.start + 1}${d.end > d.start + 1 ? `–${d.end}` : ''}`;
-    const description = d.type === 'Ambiguous' ? `Coverage gap at ${position}` : `${d.type} at ${position}: ${d.reference || '—'} → ${d.alternative || '—'}`;
+    const description = changeTooltip(d);
     return { ...d, start, end, anchor, displayLabel, labelWidth, left, lane, color, background, description };
   });
   const changeTrackHeight = changeLabels.length ? 18 + changeLaneEnds.length * 28 : 0;
@@ -311,7 +310,7 @@ const SingleRow = ({
         ends[lane] = left + labelWidth;
         const color = change.type === 'Insertion' ? '#1d4ed8' : change.type === 'Deletion' ? '#b91c1c'
           : ['Frameshift', 'Ambiguous'].includes(change.type) ? '#6d28d9' : '#92400e';
-        return { ...change, text, label, labelWidth, anchor, left, lane, color };
+        return { ...change, text, description: changeTooltip(change, feature.name), label, labelWidth, anchor, left, lane, color };
       });
   });
   const proteinLaneOffsets = [];
@@ -371,7 +370,7 @@ const SingleRow = ({
           fillOpacity={coverageGapBases.has(rowStart + i) ? 0.35 : 0.9}
           onMouseEnter={() =>
             setHoveredInfo({
-              label: `Nucleotide ${i + rowStart + 1}: ${char}`,
+              label: letterTooltip({ letter: char, position: i + rowStart, changes: rowDifferences }),
             })
           }
           onMouseLeave={() => setHoveredInfo(null)}
@@ -398,7 +397,7 @@ const SingleRow = ({
           fillOpacity={coverageGapBases.has(rowStart + i) ? 0.35 : 0.9}
           onMouseEnter={() =>
             setHoveredInfo({
-              label: `Nucleotide ${i + rowStart + 1}: ${char}`,
+              label: letterTooltip({ letter: rc[char], position: i + rowStart, changes: rowDifferences, reverseComplement: true, complement: value => rc[value] ?? value }),
             })
           }
           onMouseLeave={() => setHoveredInfo(null)}
@@ -448,8 +447,8 @@ const SingleRow = ({
         {feature.proteinLabels.map((change, index) => <path key={`aa-pointer-${index}`}
           d={`M ${change.left + change.labelWidth / 2} ${y - 14 - change.lane * 26} L ${change.anchor} ${y - 7} L ${change.anchor} ${y + 3}`}
           fill="none" stroke={change.color} strokeWidth={1.25} />)}
-        {feature.proteinLabels.map((change, index) => <g key={`aa-label-${index}`} role="img" aria-label={`${feature.name}: ${change.text}`}>
-          <title>{feature.name}: {change.text}{change.type === 'Frameshift' ? '; downstream amino-acid correspondence is uncertain' : ''}</title>
+        {feature.proteinLabels.map((change, index) => <g key={`aa-label-${index}`} role="img" aria-label={change.description} onMouseEnter={() => setHoveredInfo({ label: change.description })} onMouseLeave={() => setHoveredInfo(null)}>
+
           <rect x={change.left} y={y - 34 - change.lane * 26} width={change.labelWidth} height={20}
             rx={4} fill={change.type === 'Ambiguous' ? '#f5f3ff' : 'white'} stroke={change.color} />
           <text x={change.left + change.labelWidth / 2} y={y - 20 - change.lane * 26}
@@ -505,17 +504,13 @@ const SingleRow = ({
               } Z`}
               fill={getColor(feature, product)}
               onClick={() => handleFeatureClick(feature)}
-              onMouseEnter={() => {
-                if (zoomLevel < codonZoomThreshold) {
-                  setHoveredInfo({
-                    label: `${feature.name}: ${feature.type}`,
-                    product: altName,
-                    locusTag: feature.notes?.locus_tag || null,
-                  });
-                }
-              }}
+              onMouseEnter={() => setHoveredInfo({
+                label: `Reference annotation · ${feature.name} · ${feature.type}`,
+                product: altName,
+                locusTag: feature.notes?.locus_tag || null,
+              })}
               onMouseLeave={() => {
-                if (zoomLevel < codonZoomThreshold) setHoveredInfo(null);
+                setHoveredInfo(null);
               }}
               style={{ cursor: "pointer" }}
             />
@@ -560,7 +555,7 @@ const SingleRow = ({
                 onClick={() => handleFeatureClick(feature)}
                 onMouseOver={() =>
                   setHoveredInfo({
-                    label: `${betterName}: ${codon.aminoAcid}${codon.codonIndex + 1}`,
+                    label: letterTooltip({ letter: codon.aminoAcid, position: codon.codonIndex, changes: feature.proteinChanges, gene: betterName }),
                     product: altName,
                     locusTag: feature.notes?.locus_tag || null,
                   })
@@ -775,8 +770,7 @@ const SingleRow = ({
               : <rect x={(d.start - rowStart - 0.5) * sep} y={height - 57}
                   width={(d.end - d.start) * sep} height={15} fill={d.background} />}
           </g>)}
-          {changeLabels.map((d, i) => <g key={`label-${i}`} role="img" aria-label={d.description}>
-            <title>{d.description}</title>
+          {changeLabels.map((d, i) => <g key={`label-${i}`} role="img" aria-label={d.description} onMouseEnter={() => setHoveredInfo({ label: d.description })} onMouseLeave={() => setHoveredInfo(null)}>
             <rect x={d.left} y={height - 91 - d.lane * 28} width={d.labelWidth} height={22}
               rx={4} fill={d.background} stroke={d.color} />
             <text x={d.left + d.labelWidth / 2} y={height - 76 - d.lane * 28}

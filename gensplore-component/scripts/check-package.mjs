@@ -71,8 +71,14 @@ try {
       await page.getByRole('button', { name: 'Close comparison' }).click();
       await page.getByText('Coverage gap', { exact: true }).first().waitFor();
       assert(await page.locator('svg text[fill-opacity="0.35"]').count() > 0, 'Coverage gap reference bases are faded');
-      await page.getByRole('img', { name: /Coverage gap · AA/ }).first().waitFor();
+      await page.getByRole('img', { name: /Amino acid unresolved because of ambiguous nucleotide calls/ }).first().waitFor();
       assert(await page.locator('svg text[font-size="10"][fill-opacity="0.35"]').count() > 0, 'Coverage gap amino acids are faded');
+      await page.getByRole('img', { name: /Amino acid unresolved because of ambiguous nucleotide calls/ }).first().hover();
+      await page.getByRole('tooltip').waitFor();
+      assert.match(await page.getByRole('tooltip').innerText(), /Amino acid unresolved/);
+      await page.locator('svg text[font-size="12"][fill-opacity="0.35"]').first().hover();
+      assert.match(await page.getByRole('tooltip').innerText(), /Reference .*No confident call/);
+      if (process.env.SCREENSHOT_DIR) await page.screenshot({ path: join(process.env.SCREENSHOT_DIR, `gensplore-tooltips-${reactVersion}.png`) });
       await page.getByRole('button', { name: 'Remove aligned sequence', exact: true }).click();
       await page.getByRole('heading', { name: 'Aligned preview', exact: true }).waitFor({ state: 'detached' });
       assert.deepEqual(errors, [], 'No browser errors');
