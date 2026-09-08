@@ -19,6 +19,7 @@ import SingleRow from "./SingleRow";
 import SettingsPanel from "./SettingsPanel";
 import { Dialog, DialogPanel, DialogTitle, Description } from "@headlessui/react";
 import { parseReference } from "../comparison/parseReference.mjs";
+import { selectedSequence } from "../comparison/selection.mjs";
 import { useMeasure } from "react-use"; // or just 'react-use-measure'
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { ToastContainer, toast } from "react-toastify/unstyled";
@@ -148,7 +149,7 @@ function GensploreView({ genbankString, searchInput: controlledSearchInput, setS
       return () => {
         window.removeEventListener("keydown", handleKeyDown);
       };
-    }, [genbankData, whereMouseWentDown, whereMouseWentUp]);
+    }, [genbankData, whereMouseWentDown, whereMouseWentUp, comparison, comparisonStatus]);
   
     let rowWidth = Math.floor((width * 0.0965) / 2 ** zoomLevel);
     // rowWidth minimum 50
@@ -377,17 +378,21 @@ if (hit1 === -1) {
 
     const copySelectedSequence = (asReverseComplement = false) => {
       if (whereMouseWentDown===null || whereMouseWentUp===null) return;
+      if (comparisonStatus.busy || comparisonStatus.error) {
+        toast.info('Load a comparison successfully or clear it before copying.');
+        return;
+      }
       
       const selStart = Math.min(whereMouseWentDown, whereMouseWentUp);
       const selEnd = Math.max(whereMouseWentDown, whereMouseWentUp);
-      let selectedText = genbankData.parsedSequence.sequence.substring(selStart, selEnd);
+      let selectedText = selectedSequence(genbankData.parsedSequence.sequence, selStart, selEnd, comparison);
       
       if (asReverseComplement) {
         selectedText = getReverseComplement(selectedText);
       }
       
       navigator.clipboard.writeText(selectedText);
-      toast.success(`Copied ${asReverseComplement ? 'reverse complement ' : ''}to clipboard`);
+      toast.success(`Copied ${comparison ? 'sample ' : ''}${asReverseComplement ? 'reverse complement ' : ''}to clipboard`);
     };
 
     const handleCopySelection = () => {
@@ -521,7 +526,7 @@ if (hit1 === -1) {
                         <button 
                           onClick={() => copySelectedSequence()}
                           className="ml-2 p-1 hover:bg-gray-200 rounded-full"
-                          title="Copy selection"
+                          title={comparison ? 'Copy sample selection' : 'Copy selection'}
                         >
                           <FaRegCopy className="h-4 w-4 text-gray-500" />
                         </button>
@@ -614,6 +619,7 @@ if (hit1 === -1) {
           onClose={handleCloseContextMenu}
           onCopy={handleCopySelection}
           onCopyRC={handleCopyRC}
+          isComparison={Boolean(comparison)}
         />
       )}
    

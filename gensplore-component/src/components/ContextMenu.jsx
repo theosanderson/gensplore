@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ContextMenu = ({ x, y, onClose, onCopy, onCopyRC }) => {
+const ContextMenu = ({ x, y, onClose, onCopy, onCopyRC, isComparison = false }) => {
   if (x === null || y === null) return null;
 
   return (
@@ -12,13 +12,13 @@ const ContextMenu = ({ x, y, onClose, onCopy, onCopyRC }) => {
         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
         onClick={onCopy}
       >
-        Copy Selection
+        {isComparison ? 'Copy sample selection' : 'Copy Selection'}
       </button>
       <button
         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
         onClick={onCopyRC}
       >
-        Copy as Reverse Complement
+        {isComparison ? 'Copy sample as reverse complement' : 'Copy as Reverse Complement'}
       </button>
     </div>
   );
