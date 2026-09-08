@@ -34,6 +34,12 @@ differences, shows labelled changes on a separate track above the reference, and
 `DEL bases` with a red strike through the deleted reference letters. Substituted
 reference letters have an amber strike on both DNA and AA lines. Closely spaced
 labels stack to avoid overlaps.
+In comparison mode, copying a selection copies the sample sequence for the selected
+reference span. Substitutions and insertions are included, deleted bases are omitted,
+and unknown bases remain Ns, including terminal padding. Insertions belong to the
+preceding reference base; a selection starting at the first base also includes any
+insertion before the reference. Copy as reverse complement uses the same sample
+selection. Without a comparison, copying uses the reference.
 Positions are 1-based reference coordinates; insertions are labelled with the
 preceding reference position (0 means before the first base).
 

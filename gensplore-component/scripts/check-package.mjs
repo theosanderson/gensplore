@@ -38,6 +38,9 @@ try {
     const server = await serveDirectory(join(fixture, 'dist'));
     try {
       const page = await browser.newPage();
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, 'clipboard', { value: { writeText: async text => { window.copiedSequence = text; } } });
+      });
       const errors = [];
       page.on('pageerror', error => errors.push(error.message));
       await page.goto(server.url);
@@ -81,8 +84,32 @@ try {
       await page.locator('svg text[font-size="12"][fill-opacity="0.35"]').first().hover();
       assert.match(await page.getByRole('tooltip').innerText(), /Reference .*No confident call/);
       if (process.env.SCREENSHOT_DIR) await page.screenshot({ path: join(process.env.SCREENSHOT_DIR, `gensplore-tooltips-${reactVersion}.png`) });
+      // Select the first 50 reference bases using the rendered nucleotide positions.
+      const bases = page.locator('#row-0 text[y="10"][font-size="12"]');
+      await bases.first().scrollIntoViewIfNeeded();
+      const first = await bases.nth(0).boundingBox(), second = await bases.nth(1).boundingBox();
+      const startX = first.x + first.width / 2, y = first.y + first.height / 2;
+      const step = second.x + second.width / 2 - startX;
+      await page.mouse.move(startX, y);
+      await page.mouse.down();
+      await page.mouse.move(startX + 50 * step, y, { steps: 10 });
+      await page.mouse.up();
+      const sampleSelection = 'N'.repeat(30) + sequence.slice(30, 40) + 'GAC' + sequence.slice(40, 50);
+      await page.getByRole('button', { name: 'Copy sample selection', exact: true }).click();
+      assert.equal(await page.evaluate(() => window.copiedSequence), sampleSelection);
+      await page.evaluate(() => { window.copiedSequence = null; });
+      await page.keyboard.press('Control+c');
+      assert.equal(await page.evaluate(() => window.copiedSequence), sampleSelection);
+      await page.mouse.click(startX + 10 * step, y, { button: 'right' });
+      await page.getByRole('button', { name: 'Copy sample as reverse complement', exact: true }).click();
+      const complement = { A: 'T', T: 'A', C: 'G', G: 'C', N: 'N' };
+      assert.equal(await page.evaluate(() => window.copiedSequence), [...sampleSelection].reverse().map(base => complement[base]).join(''));
       await page.getByRole('button', { name: 'Remove aligned sequence', exact: true }).click();
       await page.getByRole('heading', { name: 'Aligned preview', exact: true }).waitFor({ state: 'detached' });
+      await page.getByRole('button', { name: 'Copy selection', exact: true }).waitFor();
+      await page.evaluate(() => { window.copiedSequence = null; });
+      await page.keyboard.press('Control+c');
+      assert.equal(await page.evaluate(() => window.copiedSequence), sequence.slice(0, 50));
       assert.deepEqual(errors, [], 'No browser errors');
       await page.close();
       console.log(`Packaged component passed with React ${reactVersion}`);
