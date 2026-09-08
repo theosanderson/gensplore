@@ -67,6 +67,8 @@ try {
       await page.getByRole('button', { name: 'Compare FASTA' }).click();
       await page.getByRole('cell', { name: 'Insertion', exact: true }).waitFor();
       await page.getByRole('cell', { name: 'Ambiguous', exact: true }).waitFor();
+      await page.getByText(/Terminal Ns excluded; comparing reference positions 31–/).waitFor();
+      assert.equal(await page.getByText(/AA comparison exceeds the alignment limit/).count(), 0);
       assert.equal(await page.getByLabel('FASTA URL').count(), 0);
       await page.getByRole('button', { name: 'Close comparison' }).click();
       await page.getByText('Coverage gap', { exact: true }).first().waitFor();
