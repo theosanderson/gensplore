@@ -104,6 +104,11 @@ export default function ComparisonPanel({ reference, features, fastaUrl, aligned
       <strong>{result.differences.length} {result.differences.length === 1 ? 'change' : 'changes'}</strong>
       <span title={result.name}>{result.name}</span>
     </p>
+      {result.coverage && (result.coverage.start > 0 || result.coverage.end < reference.length) && <p>
+        {result.coverage.end > result.coverage.start
+          ? `Terminal Ns excluded; comparing reference positions ${result.coverage.start + 1}–${result.coverage.end}.`
+          : 'No covered bases to compare (the alternative contains only Ns).'}
+      </p>}
       {result.proteins?.some(protein => protein?.warning) && <ul aria-label="Amino-acid comparison notes">
         {result.proteins.map((protein, index) => protein?.warning && <li key={index}>{features[index].name}: {protein.warning}</li>)}
       </ul>}

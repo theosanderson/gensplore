@@ -11,7 +11,7 @@ export default function Viewer({ genbankString }: Pick<GensploreProps, 'genbankS
     <button onClick={() => setFastaUrl(undefined)}>Remove comparison</button>
     <button onClick={() => {
       const reference = genbankString.split(/ORIGIN[^\n]*\n/)[1].split('//')[0].replace(/[\s0-9]/g, '').toUpperCase();
-      setAlignedSequence({ name: 'Aligned preview', sequence: 'N'.repeat(300) + reference.slice(300), insertions: [{ position: 10, sequence: 'GAC' }] });
+      setAlignedSequence({ name: 'Aligned preview', sequence: 'N'.repeat(30) + reference.slice(30, 60) + 'N'.repeat(300) + reference.slice(360), insertions: [{ position: 40, sequence: 'GAC' }] });
     }}>Use aligned sequence</button>
     <button onClick={() => setAlignedSequence(undefined)}>Remove aligned sequence</button>
     <Gensplore genbankString={genbankString} fastaUrl={fastaUrl} alignedSequence={alignedSequence} setTitleCallback={setTitle} />
