@@ -1,5 +1,5 @@
 import codonToAminoAcid from './codonMapping.mjs';
-import { align } from './align.mjs';
+import { align, alignTerminalPadding, DEFAULT_EDIT_LIMIT } from './align.mjs';
 import { featureLocations } from './rowGeometry.mjs';
 
 const complement = { A: 'T', T: 'A', C: 'G', G: 'C', R: 'Y', Y: 'R', S: 'S', W: 'W', K: 'M', M: 'K', B: 'V', V: 'B', D: 'H', H: 'D', N: 'N' };
@@ -16,7 +16,7 @@ const qualifier = (feature, name, fallback) => {
 
 // Compare literal translations of the annotated coding span. No phenotype or
 // protein-function inference. Unsupported translation annotations are explicit.
-export function compareProtein(reference, feature, differences) {
+export function compareProtein(reference, feature, differences, coverage) {
   if (!['CDS', 'mat_peptide'].includes(feature.type)) return null;
   const locations = featureLocations(feature, reference.length);
   const positions = [];
@@ -42,6 +42,10 @@ export function compareProtein(reference, feature, differences) {
     positions: positions.slice(index * 3, index * 3 + 3), aminoAcid, codonIndex: index,
   }));
   const deleted = new Set(), replacements = new Map(), insertions = new Map();
+  // Missing coverage is unknown DNA, never a deletion or a frameshift.
+  if (coverage) positions.forEach((p, index) => {
+    if (p < coverage.start || p >= coverage.end) replacements.set(index, 'N');
+  });
   let frameIndex = Infinity, boundaryWarning = false;
   for (const d of differences) {
     if (d.type === 'Insertion') {
@@ -90,8 +94,16 @@ export function compareProtein(reference, feature, differences) {
   };
   try {
     if (refPeptide && altPeptide) {
+      // Only trim residues touching missing coverage, not covered ambiguous codons.
+      const uncovered = index => codons[index].positions.some(p => p < coverage.start || p >= coverage.end);
+      let leading = 0, trailing = 0;
+      if (coverage) {
+        while (leading < refPeptide.length && uncovered(leading)) leading++;
+        while (trailing < refPeptide.length - leading && uncovered(refPeptide.length - trailing - 1)) trailing++;
+      }
+      const result = coverage ? alignTerminalPadding(refPeptide, altPeptide, 'X', DEFAULT_EDIT_LIMIT, { leading, trailing }) : align(refPeptide, altPeptide);
       const grouped = [];
-      for (const difference of align(refPeptide, altPeptide).differences) {
+      for (const difference of result.differences) {
         const change = { ...difference,
           type: difference.type === 'Ambiguous' ? /X/.test(difference.reference + difference.alternative) ? 'Ambiguous' : 'Substitution' : difference.type,
         };
@@ -113,6 +125,6 @@ export function compareProtein(reference, feature, differences) {
   return { codons, changes, warning: boundaryWarning ? 'Insertion at a coding boundary: AA assignment is uncertain' : undefined };
 }
 
-export function compareProteins(reference, features, differences) {
-  return features.map(feature => compareProtein(reference, feature, differences));
+export function compareProteins(reference, features, differences, coverage) {
+  return features.map(feature => compareProtein(reference, feature, differences, coverage));
 }

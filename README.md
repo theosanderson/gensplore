@@ -39,9 +39,14 @@ preceding reference position (0 means before the first base).
 
 Supply one ungapped DNA FASTA record, in the same orientation and with the same
 starting point as the reference. This is a global minimum-edit alignment for
-closely related complete sequences, limited to 100,000 bases and 128 base edits.
-Partial sequences, reverse orientations, circular rotations, and rearrangements
-are not handled automatically. Among alignments with the same base-edit count, fewer gap openings are preferred
+closely related sequences, limited to 100,000 bases and 256 edits within the compared span.
+Terminal Ns in the alternative are treated as missing coverage: the matching
+reference ends are excluded without shifting reference coordinates. The drawer
+shows the covered reference range; all-N input reports no covered bases. Protein
+comparisons exclude terminal residues touching missing coverage, including partial
+codons, without calling deletions or frameshifts. Internal Ns still count toward
+the edit limit. Unpadded partial sequences, reverse orientations, circular rotations,
+and rearrangements are not handled automatically. Among alignments with the same base-edit count, fewer gap openings are preferred
 so contiguous insertions/deletions remain together. Repeat regions may still admit
 equally optimal gap placements. Ambiguous IUPAC symbols are compared literally and labelled separately
 from substitutions. Amino-acid substitutions, insertions, and deletions appear above each affected

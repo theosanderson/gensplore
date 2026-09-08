@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { align, parseFasta } from './align.mjs';
+import { align, alignTerminalPadding, parseFasta } from './align.mjs';
 
 test('FASTA validation and normalization', () => {
   assert.deepEqual(parseFasta('>synthetic phage test\nacgt n\r\n'), { name: 'synthetic phage test', sequence: 'ACGTN' });
@@ -84,4 +84,39 @@ test('distinct insertions separated by matching sequence remain distinct', () =>
   assert.equal(result.distance, 2);
   assert.equal(result.differences.length, 2);
   assert.ok(result.differences.every(d => d.type === 'Insertion'));
+});
+
+
+test('terminal N padding does not consume the edit budget or shift coordinates', () => {
+  const ref = 'A'.repeat(400) + 'CGTA' + 'C'.repeat(400);
+  const alt = 'N'.repeat(400) + 'CTTA' + 'N'.repeat(400);
+  const result = alignTerminalPadding(ref, alt);
+  assert.equal(result.distance, 1);
+  assert.deepEqual(result.coverage, { start: 400, end: 404 });
+  assert.deepEqual(result.differences, [{ type: 'Substitution', start: 401, end: 402, reference: 'G', alternative: 'T' }]);
+});
+test('padding supports covered indels and preserves insertion coordinates', () => {
+  const result = alignTerminalPadding('AAACGTCC', 'NNACGATNN');
+  assert.deepEqual(result.differences, [{ type: 'Insertion', start: 5, end: 5, reference: '', alternative: 'A' }]);
+  assert.deepEqual(result.coverage, { start: 2, end: 6 });
+});
+test('internal Ns and real divergence still consume the edit budget', () => {
+  assert.throws(() => alignTerminalPadding('A'.repeat(302), 'A' + 'N'.repeat(300) + 'A'), /limit/);
+  assert.throws(() => alignTerminalPadding('A'.repeat(302), 'N' + 'C'.repeat(300) + 'N'), /limit/);
+  assert.deepEqual(alignTerminalPadding('ACGT', 'ANGT').differences, align('ACGT', 'ANGT').differences);
+});
+test('all-N input has no coverage; validation runs before trimming', () => {
+  assert.deepEqual(alignTerminalPadding('ACGT', 'NNNN'), { distance: 0, differences: [], coverage: { start: 0, end: 0 } });
+  assert.throws(() => alignTerminalPadding('A', ''), /contain/);
+  assert.throws(() => alignTerminalPadding('A', 'N'.repeat(100001)), /100,000/);
+  assert.throws(() => alignTerminalPadding('AC', 'NNNC'), /no comparable/);
+});
+
+
+test('default DNA limit accepts 256 edits and rejects 257, including padded input', () => {
+  for (const compare of [align, alignTerminalPadding]) {
+    assert.equal(compare('A'.repeat(256), 'C'.repeat(256)).distance, 256);
+    assert.throws(() => compare('A'.repeat(257), 'C'.repeat(257)), /256-edit/);
+  }
+  assert.equal(alignTerminalPadding('G' + 'A'.repeat(256) + 'G', 'N' + 'C'.repeat(256) + 'N').distance, 256);
 });

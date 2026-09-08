@@ -1,3 +1,5 @@
+export const DEFAULT_EDIT_LIMIT = 256;
+
 export function parseFasta(text) {
   const lines = text.trim().split(/\r?\n/);
   if (!lines[0]?.startsWith('>')) throw new Error('Expected a FASTA header starting with >.');
@@ -7,9 +9,27 @@ export function parseFasta(text) {
   return { name: lines[0].slice(1).trim() || 'Alternative', sequence };
 }
 
+// Padding describes missing coverage at the same starting point as the reference.
+// Clip the corresponding reference ends too, retaining its original coordinates.
+// Keep this separate from literal alignment (also used for protein sequences).
+export function alignTerminalPadding(reference, alternative, unknown = 'N', limit = DEFAULT_EDIT_LIMIT, { leading = Infinity, trailing: maxTrailing = Infinity } = {}) {
+  if (!reference.length || !alternative.length) throw new Error('Both sequences must contain bases.');
+  if (Math.max(reference.length, alternative.length) > 100000) throw new Error('Comparison supports sequences up to 100,000 bases.');
+  let start = 0, trailing = 0;
+  while (start < alternative.length && start < leading && alternative[start] === unknown) start++;
+  if (start === alternative.length) return { distance: 0, differences: [], coverage: { start: 0, end: 0 } };
+  while (trailing < alternative.length - start && trailing < maxTrailing && alternative[alternative.length - trailing - 1] === unknown) trailing++;
+  const end = reference.length - trailing;
+  if (start >= end) throw new Error('Terminal padding leaves no comparable reference span.');
+  const result = align(reference.slice(start, end), alternative.slice(start, alternative.length - trailing), limit);
+  return { ...result, coverage: { start, end }, differences: result.differences.map(d => ({
+    ...d, start: d.start + start, end: d.end + start,
+  })) };
+}
+
 // Banded global alignment, minimizing base edits first and gap openings second.
 // Any path leaving the band already costs more than the allowed edit limit.
-export function align(reference, alternative, limit = 128) {
+export function align(reference, alternative, limit = DEFAULT_EDIT_LIMIT) {
   const n = reference.length, m = alternative.length;
   if (!n || !m) throw new Error('Both sequences must contain bases.');
   if (Math.max(n, m) > 100000) throw new Error('Comparison supports sequences up to 100,000 bases.');
