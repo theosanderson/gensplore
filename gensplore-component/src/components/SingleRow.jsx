@@ -280,7 +280,7 @@ const SingleRow = ({
     const description = changeTooltip(d);
     return { ...d, start, end, anchor, displayLabel, labelWidth, left, lane, color, background, description };
   });
-  const changeTrackHeight = changeLabels.length ? 18 + changeLaneEnds.length * 28 : 0;
+  const changeTrackHeight = changeLabels.length ? 6 + changeLaneEnds.length * 28 : 0;
   let height = baseHeight + laneCount * rowSpacing + changeTrackHeight;
 
   // Reserve space above each AA ribbon independently. Features sharing a lane
