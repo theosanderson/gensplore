@@ -22,8 +22,7 @@ There is now a React component for embedding Gensplore in your own website. See 
 > Sequence comparison in Gensplore runs Nextclade's nucleotide and amino-acid
 > aligners, compiled to WebAssembly, directly in your browser. Nextclade is
 > developed by the [Nextstrain](https://nextstrain.org) team and released under the
-> MIT license; we are very grateful to its authors. If you use comparisons from
-> Gensplore in your work, please [cite Nextclade](#acknowledgements).
+> MIT license.
 
 Load a GenBank reference, then click the **Compare FASTA** (⇄) icon in the bottom-right toolbar to
 open the comparison drawer and choose a
