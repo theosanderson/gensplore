@@ -18,6 +18,13 @@ There is now a React component for embedding Gensplore in your own website. See 
 
 ### Comparing an alternative FASTA
 
+> **Alignment is powered by [Nextclade](https://github.com/nextstrain/nextclade).**
+> Sequence comparison in Gensplore runs Nextclade's nucleotide and amino-acid
+> aligners, compiled to WebAssembly, directly in your browser. Nextclade is
+> developed by the [Nextstrain](https://nextstrain.org) team and released under the
+> MIT license; we are very grateful to its authors. If you use comparisons from
+> Gensplore in your work, please [cite Nextclade](#acknowledgements).
+
 Load a GenBank reference, then click the **Compare FASTA** (⇄) icon in the bottom-right toolbar to
 open the comparison drawer and choose a
 local `.fasta`/`.fa`/`.fna` file or load a URL. A shared link can supply both files:
@@ -97,6 +104,21 @@ Source: [NCBI NC_001422.1](https://www.ncbi.nlm.nih.gov/nuccore/NC_001422.1),
 downloaded 2026-09-07. Additional tests use artificial sequences to exercise edits.
 Run the alignment tests with:
 `node --test gensplore-component/src/comparison/*.test.mjs`.
+
+### Acknowledgements
+
+Gensplore's sequence comparison is built on **[Nextclade](https://github.com/nextstrain/nextclade)**
+by the [Nextstrain](https://nextstrain.org) team (MIT license): its seeded, banded
+nucleotide aligner, codon-aware gap placement and peptide aligner do the alignment,
+and Gensplore adds the browser display. If you use these comparisons, please cite
+Nextclade:
+
+> Aksamentov I, Roemer C, Hodcroft EB, Neher RA (2021). Nextclade: clade assignment,
+> mutation calling and quality control for viral genomes. *Journal of Open Source
+> Software* 6(67), 3773. <https://doi.org/10.21105/joss.03773>
+
+Try Nextclade itself at <https://clades.nextstrain.org> for clade assignment, QC and
+much more.
 
 ### Development
 
