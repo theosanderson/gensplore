@@ -3,6 +3,10 @@ import wasm from './nextclade/wasm.js';
 import { compareAligned } from './aligned.mjs';
 import { featureLocations } from './rowGeometry.mjs';
 
+// Alignment memory grows about 480 bytes per base (250 MB at this limit) and time
+// faster than linearly: about 1.5 s here for typical genomes, longer for repetitive ones.
+export const MAX_LENGTH = 500000;
+
 let loaded;
 // Compiling needs WebAssembly, which a Content-Security-Policy without
 // 'wasm-unsafe-eval' forbids.
@@ -48,7 +52,7 @@ function requireNextclade() {
 // `alignmentParams` does (for example SARS-CoV-2's gapAlignmentSide: 'right').
 export function alignWithNextclade(reference, sequence, features = [], alignmentParams) {
   if (!reference.length || !sequence.length) throw new Error('Both sequences must contain bases.');
-  if (Math.max(reference.length, sequence.length) > 100000) throw new Error('Comparison supports sequences up to 100,000 bases.');
+  if (Math.max(reference.length, sequence.length) > MAX_LENGTH) throw new Error(`Comparison supports sequences up to ${MAX_LENGTH.toLocaleString('en-US')} bases.`);
   // Nothing to seed; an all-N sample covers no reference bases.
   if (/^N+$/.test(sequence)) return { distance: 0, differences: [], coverage: { start: 0, end: 0 } };
   requireNextclade();
