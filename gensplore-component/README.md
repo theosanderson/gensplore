@@ -70,6 +70,16 @@ file picker and URL input. Alignment runs in a browser worker; results show
 reference-relative DNA differences and translated changes above affected AA
 ribbons. Synonymous changes have no AA label; frameshifts and unsupported
 translation annotations are handled explicitly. Biological function is not predicted. See the root
-README for alignment limits and coordinate conventions.
+README for alignment details and coordinate conventions.
+
+Alignment is powered by **[Nextclade](https://github.com/nextstrain/nextclade)** (MIT license,
+by the Nextstrain team): its nucleotide and amino-acid aligners run as WebAssembly
+inside the component's worker. Please cite Nextclade if you use these comparisons
+(Aksamentov et al. 2021, *JOSS* 6(67), 3773, <https://doi.org/10.21105/joss.03773>).
+
+Alignment uses Nextclade's defaults. To reproduce a Nextclade dataset's calls, pass
+its pathogen.json `alignmentParams` as `alignmentParams`, for example
+`{ gapAlignmentSide: "right", excessBandwidth: 12, terminalBandwidth: 100, allowedMismatches: 4, minSeedCover: 0.1 }`
+for SARS-CoV-2.
 
 For an existing reference-coordinate alignment, pass `alignedSequence={{ name, sequence, insertions }}` instead of `fastaUrl`. The sequence has one IUPAC base (including `N`) or deletion gap (`-`) per reference base. Insertions are `{ position, sequence }`, where position is the number of reference bases before the insertion (0 means before the first base). This preserves supplied gap placement and bypasses FASTA realignment. Removing the prop clears the comparison.

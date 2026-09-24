@@ -15,7 +15,8 @@ try {
   const packResult = JSON.parse(execFileSync('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', temporary], { cwd: root, encoding: 'utf8' }));
   const pack = Array.isArray(packResult) ? packResult[0] : packResult.gensplore;
   const packedFiles = pack.files.map(file => file.path);
-  const requiredFiles = ['dist/gensplore.js', 'dist/gensplore.cjs', 'dist/index.d.ts', 'dist/index.d.cts'];
+  // The embedded Nextclade WebAssembly module's license notices must ship with it.
+  const requiredFiles = ['dist/gensplore.js', 'dist/gensplore.cjs', 'dist/index.d.ts', 'dist/index.d.cts', 'THIRD_PARTY_LICENSES.txt'];
   for (const required of requiredFiles) assert(packedFiles.includes(required), required);
   assert(packedFiles.every(path => requiredFiles.includes(path) || /^(package.json|README.md|LICENSE.*)$/.test(path)), 'Only library outputs and package metadata should be packed');
   browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined });
@@ -25,9 +26,10 @@ try {
     await mkdir(join(fixture, 'public'), { recursive: true });
     await cp(join(root, '../website/public/phix174.gb'), join(fixture, 'public/reference.gb'));
     const control = await readFile(join(root, '../website/public/phix174.fasta'), 'utf8');
-    // An arbitrary single-base deletion exercises the packaged inline worker.
+    // A 400-base deletion exceeds the JavaScript aligner's band, so this exercises
+    // the embedded Nextclade WebAssembly module in the packaged inline worker.
     const sequence = control.split('\n').slice(1).join('').trim();
-    await writeFile(join(fixture, 'public/alternative.fasta'), '>Packaged phage test\n' + sequence.slice(0, 100) + sequence.slice(101) + '\n');
+    await writeFile(join(fixture, 'public/alternative.fasta'), '>Packaged phage test\n' + sequence.slice(0, 1000) + sequence.slice(1400) + '\n');
     run('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund'], fixture);
     run('npm', ['install', '--ignore-scripts', '--no-save', '--package-lock=false', '--no-audit', '--no-fund', join(temporary, pack.filename), `react@${reactVersion}`, `react-dom@${reactVersion}`, ...(reactVersion.startsWith("19") ? ["@types/react@19.2.18", "@types/react-dom@19.2.7"] : [])], fixture);
     run('npm', ['run', 'check'], fixture);
@@ -70,8 +72,8 @@ try {
       await page.getByRole('button', { name: 'Compare FASTA' }).click();
       await page.getByRole('cell', { name: 'Insertion', exact: true }).waitFor();
       await page.getByRole('cell', { name: 'Ambiguous', exact: true }).waitFor();
-      await page.getByText(/Terminal Ns excluded from alignment and shown as coverage gaps; comparing reference positions 31–/).waitFor();
-      assert.equal(await page.getByText(/AA comparison exceeds the alignment limit/).count(), 0);
+      await page.getByText(/Reference ends not covered by the sample \(terminal Ns or unsequenced ends\) are shown as coverage gaps; comparing reference positions 31–/).waitFor();
+      assert.equal(await page.getByText(/AA comparison could not be aligned/).count(), 0);
       assert.equal(await page.getByLabel('FASTA URL').count(), 0);
       await page.getByRole('button', { name: 'Close comparison' }).click();
       await page.getByText('Coverage gap', { exact: true }).first().waitFor();

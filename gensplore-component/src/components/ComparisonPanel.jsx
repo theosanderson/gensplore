@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import AlignmentWorker from '../comparison/worker.js?worker&inline';
 
-export default function ComparisonPanel({ reference, features, fastaUrl, alignedSequence, onResult, onGoTo, open, setOpen, onStatus }) {
+export default function ComparisonPanel({ reference, features, fastaUrl, alignedSequence, alignmentParams, onResult, onGoTo, open, setOpen, onStatus }) {
   const [fasta, setFasta] = useState(null);
   const [url, setUrl] = useState(fastaUrl || '');
   const [request, setRequest] = useState(0);
@@ -11,6 +11,8 @@ export default function ComparisonPanel({ reference, features, fastaUrl, aligned
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const generation = useRef(0);
+  // Compared by value, so an inline object prop does not realign on every render.
+  const alignmentParamsJson = JSON.stringify(alignmentParams ?? null);
   const previousAligned = useRef();
   useEffect(() => {
     if (alignedSequence || previousAligned.current) {
@@ -70,9 +72,9 @@ export default function ComparisonPanel({ reference, features, fastaUrl, aligned
       if (cancelled || id !== generation.current) return;
       setError('Alignment failed. Please try another FASTA.'); setBusy(false);
     };
-    worker.postMessage({ reference, features, fasta, alignedSequence });
+    worker.postMessage({ reference, features, fasta, alignedSequence, alignmentParams: JSON.parse(alignmentParamsJson) });
     return () => { cancelled = true; worker.terminate(); };
-  }, [reference, features, fasta, alignedSequence, onResult]);
+  }, [reference, features, fasta, alignedSequence, alignmentParamsJson, onResult]);
   const loadFile = async (file) => {
     if (!file) return;
     const id = ++generation.current;
@@ -106,7 +108,7 @@ export default function ComparisonPanel({ reference, features, fastaUrl, aligned
     </p>
       {result.coverage && (result.coverage.start > 0 || result.coverage.end < reference.length) && <p>
         {result.coverage.end > result.coverage.start
-          ? `Terminal Ns excluded from alignment and shown as coverage gaps; comparing reference positions ${result.coverage.start + 1}–${result.coverage.end}.`
+          ? `Reference ends not covered by the sample (terminal Ns or unsequenced ends) are shown as coverage gaps; comparing reference positions ${result.coverage.start + 1}–${result.coverage.end}.`
           : 'No covered bases to compare (the alternative contains only Ns).'}
       </p>}
       {result.proteins?.some(protein => protein?.warning) && <ul aria-label="Amino-acid comparison notes">
