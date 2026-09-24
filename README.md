@@ -43,20 +43,37 @@ selection. Without a comparison, copying uses the reference.
 Positions are 1-based reference coordinates; insertions are labelled with the
 preceding reference position (0 means before the first base).
 
-Supply one ungapped DNA FASTA record, in the same orientation and with the same
-starting point as the reference. This is a global minimum-edit alignment for
-closely related sequences, limited to 100,000 bases and 256 edits within the compared span.
-Terminal Ns in the alternative are treated as missing coverage: the matching
-reference ends are excluded from alignment without shifting reference coordinates.
-These regions remain visible as coverage-gap callouts and faded reference letters
+Supply one DNA FASTA record in the same orientation as the reference. This is a
+global minimum-edit alignment for related sequences, limited to 100,000 bases,
+256 inserted or deleted bases, and 5% of the compared reference in total edits.
+Substitutions are not capped at the indel limit, so divergent lineages (for example
+a SARS-CoV-2 genome several hundred substitutions from Wuhan-Hu-1) still align.
+
+Samples need not start at the same position as the reference or be padded: the
+sample's ends are anchored to the reference by exact unique 24-base matches, and
+reference positions outside that span are reported as missing coverage rather than
+as deletions. Terminal Ns are missing coverage in the same way, and Ns anywhere in
+the sample are treated as missing data rather than edits, so amplicon dropouts do
+not consume the edit budget; each run is reported as one ambiguous difference.
+Missing regions remain visible as coverage-gap callouts and faded reference letters
 on both nucleotide and amino-acid tracks, including partially covered codons. The drawer
 shows the covered reference range; all-N input reports no covered bases. Protein
 comparisons exclude terminal residues touching missing coverage, including partial
-codons, without calling deletions or frameshifts. Internal Ns still count toward
-the edit limit. Unpadded partial sequences, reverse orientations, circular rotations,
-and rearrangements are not handled automatically. Among alignments with the same base-edit count, fewer gap openings are preferred
-so contiguous insertions/deletions remain together. Repeat regions may still admit
-equally optimal gap placements. Ambiguous IUPAC symbols are compared literally and labelled separately
+codons, without calling deletions or frameshifts.
+
+A gapped record whose length matches the reference (such as Nextclade aligned
+output) is used in the coordinates supplied, without being realigned, so its gap
+placement is preserved; note that such files omit insertions relative to the
+reference. Other gapped records are ungapped and aligned here. Reverse
+orientations, circular rotations, and rearrangements are not handled automatically.
+
+Gap openings cost more than a single edit, so contiguous insertions/deletions stay
+together and a compensating insertion/deletion pair is not preferred over a short run
+of substitutions (which would read as a spurious frameshift). Repeat and highly
+diverged regions may still admit equally optimal gap placements, which can differ
+from those chosen by other aligners.
+
+Ambiguous IUPAC symbols are compared literally and labelled separately
 from substitutions. Amino-acid substitutions, insertions, and deletions appear above each affected
 coding ribbon, with reference protein positions and deletion strikes. Synonymous
 changes have no AA marker. Joined locations, reverse strands, and `codon_start`
