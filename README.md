@@ -120,6 +120,10 @@ Nextclade:
 Try Nextclade itself at <https://clades.nextstrain.org> for clade assignment, QC and
 much more.
 
+The license notices for Nextclade and the Rust crates compiled into the aligner are
+in [`gensplore-component/THIRD_PARTY_LICENSES.txt`](gensplore-component/THIRD_PARTY_LICENSES.txt),
+which ships in the npm package and is published with the website.
+
 ### Development
 
 With Node.js 24, run `npm ci` at the repository root. `npm run build` builds
@@ -130,4 +134,5 @@ The aligner's WebAssembly build (from `gensplore-component/align-wasm/`, which
 pins the Nextclade commit) is committed under
 `gensplore-component/src/comparison/nextclade/`, so building needs no Rust. After
 changing the crate or bumping Nextclade, regenerate it with
-`npm run build:wasm --workspace=gensplore` (needs rustup and wasm-pack).
+`npm run build:wasm --workspace=gensplore` (needs rustup and wasm-pack), which also
+regenerates `THIRD_PARTY_LICENSES.txt` from the crates linked into the module.

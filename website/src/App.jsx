@@ -167,6 +167,12 @@ const App = () => {
               <FaGithub className="inline mr-1.5 mb-0.5" />
               View code on GitHub
             </a>
+            <div className="text-xs text-gray-400 mt-1">
+              Alignment powered by{" "}
+              <a className="underline hover:text-gray-600" href="https://github.com/nextstrain/nextclade">Nextclade</a>
+              {" · "}
+              <a className="underline hover:text-gray-600" href="THIRD_PARTY_LICENSES.txt">Third-party licenses</a>
+            </div>
           </div>
 
           <h3 className="text-2xl mr-3 text-gray-700 ml-3 font-bold text-center mt-4 mb-4 ">

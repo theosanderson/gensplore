@@ -15,7 +15,8 @@ try {
   const packResult = JSON.parse(execFileSync('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', temporary], { cwd: root, encoding: 'utf8' }));
   const pack = Array.isArray(packResult) ? packResult[0] : packResult.gensplore;
   const packedFiles = pack.files.map(file => file.path);
-  const requiredFiles = ['dist/gensplore.js', 'dist/gensplore.cjs', 'dist/index.d.ts', 'dist/index.d.cts'];
+  // The embedded Nextclade WebAssembly module's license notices must ship with it.
+  const requiredFiles = ['dist/gensplore.js', 'dist/gensplore.cjs', 'dist/index.d.ts', 'dist/index.d.cts', 'THIRD_PARTY_LICENSES.txt'];
   for (const required of requiredFiles) assert(packedFiles.includes(required), required);
   assert(packedFiles.every(path => requiredFiles.includes(path) || /^(package.json|README.md|LICENSE.*)$/.test(path)), 'Only library outputs and package metadata should be packed');
   browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined });

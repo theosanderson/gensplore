@@ -50,7 +50,8 @@
   "main": "./dist/gensplore.cjs",
   "module": "./dist/gensplore.js",
   "files": [
-    "dist"
+    "dist",
+    "THIRD_PARTY_LICENSES.txt"
   ],
   "scripts": {
     "start": "vite",
