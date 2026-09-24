@@ -1,4 +1,4 @@
-import { align, initSync } from './nextclade/align.js';
+import { align, align_peptides as alignPeptidePair, initSync } from './nextclade/align.js';
 import wasm from './nextclade/wasm.js';
 import { compareAligned } from './aligned.mjs';
 import { featureLocations } from './rowGeometry.mjs';
@@ -38,17 +38,23 @@ export function cdsSegments(features, referenceLength) {
   return new Int32Array(segments);
 }
 
+function requireNextclade() {
+  if (!loadNextclade()) throw new Error("Alignment needs WebAssembly. If this page sets a Content-Security-Policy, allow 'wasm-unsafe-eval' in script-src.");
+}
+
 // Align with Nextclade, then compare its alignment projected onto the reference:
 // unsequenced ends become N (missing coverage) and query-only bases insertions.
-export function alignWithNextclade(reference, sequence, features = []) {
+// `alignmentParams` overrides Nextclade's defaults, as a dataset's pathogen.json
+// `alignmentParams` does (for example SARS-CoV-2's gapAlignmentSide: 'right').
+export function alignWithNextclade(reference, sequence, features = [], alignmentParams) {
   if (!reference.length || !sequence.length) throw new Error('Both sequences must contain bases.');
   if (Math.max(reference.length, sequence.length) > 100000) throw new Error('Comparison supports sequences up to 100,000 bases.');
   // Nothing to seed; an all-N sample covers no reference bases.
   if (/^N+$/.test(sequence)) return { distance: 0, differences: [], coverage: { start: 0, end: 0 } };
-  if (!loadNextclade()) throw new Error("Alignment needs WebAssembly. If this page sets a Content-Security-Policy, allow 'wasm-unsafe-eval' in script-src.");
+  requireNextclade();
   let alignedReference, alignedQuery;
   try {
-    [alignedReference, alignedQuery] = align(reference, sequence, cdsSegments(features, reference.length)).split('\n');
+    [alignedReference, alignedQuery] = align(reference, sequence, cdsSegments(features, reference.length), JSON.stringify(alignmentParams ?? {})).split('\n');
   } catch (error) {
     throw new Error(`Could not align this sequence to the reference: ${error.message} Use a related sequence in the same orientation as the reference.`);
   }
@@ -66,4 +72,34 @@ export function alignWithNextclade(reference, sequence, features = []) {
     sequence: projected, insertions: insertions.map(({ position, sequence }) => ({ position, sequence })),
   });
   return { distance, differences, coverage };
+}
+
+// Peptides are aligned as Nextclade's translate_cds does: with its banded amino-acid
+// aligner, the band estimated (calculate_aa_alignment_params) from the gaps in the
+// coding nucleotide alignment, deleted bases being query gaps and inserted bases
+// reference gaps. X is an unknown residue: missing data, reported as ambiguous.
+export function alignPeptides(reference, alternative, { deleted = 0, inserted = 0 } = {}, alignmentParams) {
+  if (!reference.length || !alternative.length) throw new Error('Both peptides must contain residues.');
+  requireNextclade();
+  const bandWidth = Math.trunc((deleted + inserted) / 3) + 5;
+  const meanShift = Math.trunc((deleted - inserted) / 6);
+  const [alignedReference, alignedAlternative] = alignPeptidePair(reference, alternative, bandWidth, meanShift, JSON.stringify(alignmentParams ?? {})).split('\n');
+  const differences = [];
+  let position = 0;
+  for (let i = 0; i < alignedReference.length; i++) {
+    const ref = alignedReference[i], alt = alignedAlternative[i];
+    if (ref !== alt) {
+      const type = ref === '-' ? 'Insertion' : alt === '-' ? 'Deletion' : ref === 'X' || alt === 'X' ? 'Ambiguous' : 'Substitution';
+      const last = differences.at(-1);
+      // Indels and runs of unknown residues form single differences.
+      const run = type === 'Insertion' || type === 'Deletion' || (type === 'Ambiguous' && alt === 'X' && /^X*$/.test(last?.alternative));
+      if (last && last.type === type && run && last.end === position) {
+        last.reference += ref === '-' ? '' : ref;
+        last.alternative += alt === '-' ? '' : alt;
+        last.end += ref === '-' ? 0 : 1;
+      } else differences.push({ type, start: position, end: position + (ref === '-' ? 0 : 1), reference: ref === '-' ? '' : ref, alternative: alt === '-' ? '' : alt });
+    }
+    if (ref !== '-') position++;
+  }
+  return differences;
 }

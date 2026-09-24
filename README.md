@@ -72,12 +72,17 @@ orientations, circular rotations, and rearrangements are not handled automatical
 
 As in Nextclade, gap openings within a codon of an annotated CDS cost more than
 openings between codons, so deletions in coding regions keep the reading frame
-where an equally good placement allows. Repeat and highly diverged regions may
-still admit equally optimal gap placements, which can differ from those chosen by
-other aligners or Nextclade datasets with different annotations.
+where an equally good placement allows. Nextclade's defaults are used unless the
+component's `alignmentParams` prop overrides them with a Nextclade dataset's
+pathogen.json `alignmentParams`; datasets tune, for example, which of several
+equally scoring gap placements is chosen. With the SARS-CoV-2 dataset's parameters,
+a divergent test sample reproduces Nextclade's nucleotide and amino-acid calls
+exactly.
 
 Ambiguous IUPAC symbols are compared literally and labelled separately
-from substitutions. Amino-acid substitutions, insertions, and deletions appear above each affected
+from substitutions. Translated peptides are aligned as in Nextclade: with its
+banded amino-acid aligner, the band estimated from the indels in the coding
+nucleotide alignment, so there is no fixed limit on AA edits. Amino-acid substitutions, insertions, and deletions appear above each affected
 coding ribbon, with reference protein positions and deletion strikes. Synonymous
 changes have no AA marker. Joined locations, reverse strands, and `codon_start`
 are respected. AA comparison uses literal codon translation for tables 1 and 11

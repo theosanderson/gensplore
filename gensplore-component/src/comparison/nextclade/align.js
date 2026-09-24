@@ -142,11 +142,12 @@ let WASM_VECTOR_LEN = 0;
  * @param {string} reference
  * @param {string} query
  * @param {Int32Array} cds_segments
+ * @param {string} params_json
  * @returns {string}
  */
-export function align(reference, query, cds_segments) {
-    let deferred5_0;
-    let deferred5_1;
+export function align(reference, query, cds_segments, params_json) {
+    let deferred6_0;
+    let deferred6_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         const ptr0 = passStringToWasm0(reference, wasm.__wbindgen_export, wasm.__wbindgen_export2);
@@ -155,7 +156,53 @@ export function align(reference, query, cds_segments) {
         const len1 = WASM_VECTOR_LEN;
         const ptr2 = passArray32ToWasm0(cds_segments, wasm.__wbindgen_export);
         const len2 = WASM_VECTOR_LEN;
-        wasm.align(retptr, ptr0, len0, ptr1, len1, ptr2, len2);
+        const ptr3 = passStringToWasm0(params_json, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len3 = WASM_VECTOR_LEN;
+        wasm.align(retptr, ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr5 = r0;
+        var len5 = r1;
+        if (r3) {
+            ptr5 = 0; len5 = 0;
+            throw takeObject(r2);
+        }
+        deferred6_0 = ptr5;
+        deferred6_1 = len5;
+        return getStringFromWasm0(ptr5, len5);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export3(deferred6_0, deferred6_1, 1);
+    }
+}
+
+/**
+ * Aligns peptide `query` to `reference` with Nextclade's banded amino-acid aligner and
+ * returns the aligned reference and query joined by a newline. As in Nextclade's
+ * `translate_cds`, the band comes from the CDS's nucleotide alignment rather than
+ * seeds: `band_width` and `mean_shift` follow `calculate_aa_alignment_params`.
+ * Callers trim unsequenced terminal residues first, so terminal gaps are penalized.
+ * @param {string} reference
+ * @param {string} query
+ * @param {number} band_width
+ * @param {number} mean_shift
+ * @param {string} params_json
+ * @returns {string}
+ */
+export function align_peptides(reference, query, band_width, mean_shift, params_json) {
+    let deferred5_0;
+    let deferred5_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(reference, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(query, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passStringToWasm0(params_json, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        const len2 = WASM_VECTOR_LEN;
+        wasm.align_peptides(retptr, ptr0, len0, ptr1, len1, band_width, mean_shift, ptr2, len2);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);

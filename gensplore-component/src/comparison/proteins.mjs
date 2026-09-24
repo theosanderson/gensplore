@@ -1,5 +1,5 @@
 import codonToAminoAcid from './codonMapping.mjs';
-import { align, alignTerminalPadding, DEFAULT_EDIT_LIMIT } from './align.mjs';
+import { alignPeptides } from './nextclade.mjs';
 import { featureLocations } from './rowGeometry.mjs';
 
 const complement = { A: 'T', T: 'A', C: 'G', G: 'C', R: 'Y', Y: 'R', S: 'S', W: 'W', K: 'M', M: 'K', B: 'V', V: 'B', D: 'H', H: 'D', N: 'N' };
@@ -16,7 +16,7 @@ const qualifier = (feature, name, fallback) => {
 
 // Compare literal translations of the annotated coding span. No phenotype or
 // protein-function inference. Unsupported translation annotations are explicit.
-export function compareProtein(reference, feature, differences, coverage) {
+export function compareProtein(reference, feature, differences, coverage, alignmentParams) {
   if (!['CDS', 'mat_peptide'].includes(feature.type)) return null;
   const locations = featureLocations(feature, reference.length);
   const positions = [];
@@ -101,10 +101,23 @@ export function compareProtein(reference, feature, differences, coverage) {
         while (leading < refPeptide.length && uncovered(leading)) leading++;
         while (trailing < refPeptide.length - leading && uncovered(refPeptide.length - trailing - 1)) trailing++;
       }
-      // N is asparagine, so the unknown residue must be given explicitly as X.
-      const result = coverage ? alignTerminalPadding(refPeptide, altPeptide, 'X', DEFAULT_EDIT_LIMIT, { leading, trailing }) : align(refPeptide, altPeptide, DEFAULT_EDIT_LIMIT, 'X');
+      // Residues touching missing coverage translate to X; clip them, and the
+      // corresponding reference residues, keeping reference coordinates.
+      let start = 0, end = 0;
+      while (start < altPeptide.length && start < leading && altPeptide[start] === 'X') start++;
+      while (end < altPeptide.length - start && end < trailing && altPeptide[altPeptide.length - end - 1] === 'X') end++;
+      // Nextclade sizes the peptide band from the indels in the translated span.
+      const translated = index => index < (Number.isFinite(frameIndex) ? frameCodon * 3 : Infinity);
+      const indels = {
+        deleted: [...deleted].filter(translated).length,
+        inserted: [...insertions].filter(([index]) => translated(index)).reduce((sum, [, bases]) => sum + bases.length, 0),
+      };
+      const differences = start === altPeptide.length ? [] : start >= refPeptide.length - end ? null
+        : alignPeptides(refPeptide.slice(start, refPeptide.length - end), altPeptide.slice(start, altPeptide.length - end), indels, alignmentParams)
+          .map(d => ({ ...d, start: d.start + start, end: d.end + start }));
+      if (!differences) throw new Error('Terminal coverage leaves no comparable residues.');
       const grouped = [];
-      for (const difference of result.differences) {
+      for (const difference of differences) {
         const change = { ...difference,
           type: difference.type === 'Ambiguous' ? /X/.test(difference.reference + difference.alternative) ? 'Ambiguous' : 'Substitution' : difference.type,
         };
@@ -120,12 +133,12 @@ export function compareProtein(reference, feature, differences, coverage) {
       changes = [makeChange({ type: refPeptide ? 'Deletion' : 'Insertion', start: 0, end: refPeptide.length, reference: refPeptide, alternative: altPeptide })];
     }
   } catch {
-    return { codons, changes: [], warning: 'AA comparison exceeds the alignment limit' };
+    return { codons, changes: [], warning: 'AA comparison could not be aligned' };
   }
   if (Number.isFinite(frameIndex)) changes.push(makeChange({ type: 'Frameshift', start: frameCodon, end: frameCodon + 1, reference: '', alternative: '' }));
   return { codons, changes, warning: boundaryWarning ? 'Insertion at a coding boundary: AA assignment is uncertain' : undefined };
 }
 
-export function compareProteins(reference, features, differences, coverage) {
-  return features.map(feature => compareProtein(reference, feature, differences, coverage));
+export function compareProteins(reference, features, differences, coverage, alignmentParams) {
+  return features.map(feature => compareProtein(reference, feature, differences, coverage, alignmentParams));
 }

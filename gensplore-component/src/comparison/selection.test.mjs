@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { selectedSequence } from './selection.mjs';
 import { compareAligned } from './aligned.mjs';
-import { alignTerminalPadding } from './align.mjs';
+import { alignWithNextclade } from './nextclade.mjs';
 
 test('reference-only selection and out-of-bounds drags retain substring behavior', () => {
   assert.equal(selectedSequence('ACGT', 1, 3), 'CG');
@@ -37,5 +37,5 @@ test('FASTA comparisons reconstruct the original sample, including trimmed paddi
     ['ACGTACGT', 'NTGTACNN'],
     ['ACGTACGT', 'ACGACGT'],
     ['ACGT', 'NNNN'],
-  ]) assert.equal(selectedSequence(reference, 0, reference.length, alignTerminalPadding(reference, sample)), sample);
+  ]) assert.equal(selectedSequence(reference, 0, reference.length, alignWithNextclade(reference, sample)), sample);
 });

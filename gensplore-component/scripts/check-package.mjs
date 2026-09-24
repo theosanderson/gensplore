@@ -72,7 +72,7 @@ try {
       await page.getByRole('cell', { name: 'Insertion', exact: true }).waitFor();
       await page.getByRole('cell', { name: 'Ambiguous', exact: true }).waitFor();
       await page.getByText(/Reference ends not covered by the sample \(terminal Ns or unsequenced ends\) are shown as coverage gaps; comparing reference positions 31–/).waitFor();
-      assert.equal(await page.getByText(/AA comparison exceeds the alignment limit/).count(), 0);
+      assert.equal(await page.getByText(/AA comparison could not be aligned/).count(), 0);
       assert.equal(await page.getByLabel('FASTA URL').count(), 0);
       await page.getByRole('button', { name: 'Close comparison' }).click();
       await page.getByText('Coverage gap', { exact: true }).first().waitFor();

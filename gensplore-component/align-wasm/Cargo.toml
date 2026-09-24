@@ -13,6 +13,7 @@ crate-type = ["cdylib"]
 # Pinned to the commit of the Nextclade web-3.23.0 release; bump together with the built output.
 nextclade = { git = "https://github.com/nextstrain/nextclade", rev = "629ea8fb0cfe3165db13ddc75dab16d3c2292dbd" }
 wasm-bindgen = "=0.2.106"
+serde_json = "=1.0.148"
 # Nextclade's dependencies pull in both getrandom lines; both need their browser backend.
 getrandom = { version = "=0.3.4", features = ["wasm_js"] }
 getrandom_0_2 = { package = "getrandom", version = "0.2", features = ["js"] }

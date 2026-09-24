@@ -978,6 +978,7 @@ dependencies = [
  "getrandom 0.2.10",
  "getrandom 0.3.4",
  "nextclade",
+ "serde_json",
  "wasm-bindgen",
 ]
 

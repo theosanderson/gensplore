@@ -10,3 +10,5 @@ against a real divergent, partially covered sample rather than only synthetic DN
 - `QB007131.nextclade-aligned.fasta` — the same sample as aligned by Nextclade
   (reference length, deletions as `-`, unsequenced ends as `N`), from the
   Nextstrain open dataset via <https://lapis.cov-spectrum.org>.
+- `QB007131.nextclade-aa.txt` — Nextclade's amino-acid substitutions, deletions
+  and insertions for the same sample, from the same source.

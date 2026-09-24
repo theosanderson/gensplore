@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { parseFasta } from './align.mjs';
+import { parseFasta } from './fasta.mjs';
 import { compareAligned } from './aligned.mjs';
 import { alignWithNextclade, cdsSegments, loadNextclade } from './nextclade.mjs';
+import { compareProteins } from './proteins.mjs';
 import { parseReference } from './parseReference.mjs';
 
 const fixture = async name => parseFasta(await readFile(new URL(`./fixtures/${name}`, import.meta.url), 'utf8'));
@@ -36,25 +37,53 @@ test('CDS segments follow transcript order from the first complete codon', () =>
   ]);
 });
 
-test('a divergent SARS-CoV-2 sample matches Nextclade’s own alignment', async () => {
+// alignmentParams from the Nextclade SARS-CoV-2 dataset's pathogen.json
+// (nextstrain/sars-cov-2/wuhan-hu-1/orfs, 2026-09-07--17-10-15Z).
+const SARS_COV_2_PARAMS = { excessBandwidth: 12, terminalBandwidth: 100, allowedMismatches: 4, gapAlignmentSide: 'right', minSeedCover: 0.1 };
+
+test('a divergent SARS-CoV-2 sample reproduces Nextclade’s nucleotide and amino-acid calls', async () => {
   const reference = (await fixture('NC_045512.2.fasta')).sequence;
   const raw = await fixture('QB007131.fasta');
   const published = await fixture('QB007131.nextclade-aligned.fasta');
   const { features } = (await parseReference(await website('sequence.gb')))[0].parsedSequence;
-  const result = alignWithNextclade(reference, raw.sequence, features);
+  const result = alignWithNextclade(reference, raw.sequence, features, SARS_COV_2_PARAMS);
+  // Nextclade's aligned FASTA omits insertions; everything else is identical.
   const expected = compareAligned(reference, { ...published, sequence: published.aligned });
-  // The unsequenced ends are missing coverage, not terminal edits.
   assert.deepEqual(result.coverage, expected.coverage);
-  const count = (r, type) => r.differences.filter(d => d.type === type).reduce((n, d) => n + Math.max(1, d.end - d.start), 0);
+  assert.deepEqual(result.differences.filter(d => d.type !== 'Insertion'), expected.differences);
+
+  // Nextclade's amino-acid calls for the CDSs this GenBank record shares with its
+  // dataset (it splits ORF1ab into ORF1a and ORF1b; ours has a ribosomal slippage).
+  const calls = (await readFile(new URL('./fixtures/QB007131.nextclade-aa.txt', import.meta.url), 'utf8')).trim().split('\n');
+  const proteins = compareProteins(reference, features, result.differences, result.coverage, SARS_COV_2_PARAMS);
+  const ours = [];
+  const names = new Set();
+  features.forEach((feature, index) => {
+    if (feature.type !== 'CDS' || !proteins[index] || /^orf1|^nsp|^leader/.test(feature.name)) return;
+    const name = feature.name === 'ORF9B' ? 'ORF9b' : feature.name;
+    names.add(name);
+    assert.equal(proteins[index].warning, undefined, name);
+    for (const change of proteins[index].changes) {
+      if (change.type === 'Substitution') ours.push(`${name}:${change.reference}${change.aaPosition}${change.alternative}`);
+      else if (change.type === 'Deletion') [...change.reference].forEach((residue, k) => ours.push(`${name}:${residue}${change.aaPosition + k}-`));
+      else if (change.type === 'Insertion') ours.push(`ins_${name}:${change.aaPosition}:${change.alternative}`);
+      else assert.fail(`unexpected ${change.type} in ${name}`);
+    }
+  });
+  const theirs = calls.filter(call => names.has(call.replace(/^ins_/, '').split(':')[0]));
+  assert.ok(theirs.length > 100);
+  assert.deepEqual(ours.sort(), theirs.sort());
+});
+
+test('without dataset parameters, Nextclade’s defaults still agree up to equally scoring gap placement', async () => {
+  const reference = (await fixture('NC_045512.2.fasta')).sequence;
+  const raw = await fixture('QB007131.fasta');
+  const published = await fixture('QB007131.nextclade-aligned.fasta');
+  const result = alignWithNextclade(reference, raw.sequence);
+  const expected = compareAligned(reference, { ...published, sequence: published.aligned });
+  assert.deepEqual(result.coverage, expected.coverage);
+  const count = (r, type) => r.differences.filter(d => d.type === type).reduce((n, d) => n + d.end - d.start, 0);
   assert.equal(count(result, 'Deletion'), count(expected, 'Deletion'));
-  // Equally scoring gap placements in repeats may differ from the published run;
-  // everything else agrees.
-  const substitutions = r => new Set(r.differences.filter(d => d.type === 'Substitution').map(d => `${d.start}${d.alternative}`));
-  const ours = substitutions(result), theirs = substitutions(expected);
-  const shared = [...ours].filter(s => theirs.has(s)).length;
-  assert.ok(shared >= theirs.size - 3, `only ${shared} of ${theirs.size} substitutions agreed`);
-  // Nextclade's aligned FASTA omits insertions; they are reported here.
-  assert.ok(result.differences.some(d => d.type === 'Insertion'));
 });
 
 test('indels longer than the JavaScript aligner’s band are aligned', () => {
