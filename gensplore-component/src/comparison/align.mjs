@@ -20,8 +20,8 @@ export function parseFasta(text) {
   return { name: lines[0].slice(1).trim() || 'Alternative', sequence, aligned: raw.includes('-') ? raw : null };
 }
 
-// Protein-side counterpart of alignSample: padding describes missing coverage at the
-// same starting point as the reference.
+// Terminal padding (N, or X for proteins) describes missing coverage at the same
+// starting point as the reference.
 // Clip the corresponding reference ends too, retaining its original coordinates.
 // Keep this separate from literal alignment (also used for protein sequences).
 export function alignTerminalPadding(reference, alternative, unknown = 'N', limit = DEFAULT_EDIT_LIMIT, { leading = Infinity, trailing: maxTrailing = Infinity } = {}) {
@@ -36,42 +36,6 @@ export function alignTerminalPadding(reference, alternative, unknown = 'N', limi
   const result = align(reference.slice(start, end), alternative.slice(start, alternative.length - trailing), limit, unknown);
   return { ...result, coverage: { start, end }, differences: result.differences.map(d => ({
     ...d, start: d.start + start, end: d.end + start,
-  })) };
-}
-
-const ANCHOR = 24, ANCHOR_SEARCH = 500;
-// Where the first N-free k-mer near one end of the sample lands in the reference,
-// projected back to that end. Only unique exact matches are trusted.
-function anchor(reference, sample, fromEnd) {
-  const flip = s => [...s].reverse().join('');
-  const ref = fromEnd ? flip(reference) : reference, alt = fromEnd ? flip(sample) : sample;
-  for (let offset = 0; offset + ANCHOR <= Math.min(alt.length, ANCHOR_SEARCH); offset += ANCHOR) {
-    const kmer = alt.slice(offset, offset + ANCHOR);
-    if (kmer.includes('N')) continue;
-    const at = ref.indexOf(kmer);
-    if (at < 0 || ref.indexOf(kmer, at + 1) >= 0) continue;
-    return Math.max(0, at - offset);
-  }
-  return 0;
-}
-
-// Align a sample that may cover only part of the reference: terminal Ns, and
-// reference ends beyond the sample's anchored ends, are missing coverage.
-export function alignSample(reference, alternative, limit = DEFAULT_EDIT_LIMIT) {
-  if (!reference.length || !alternative.length) throw new Error('Both sequences must contain bases.');
-  if (Math.max(reference.length, alternative.length) > 100000) throw new Error('Comparison supports sequences up to 100,000 bases.');
-  let start = 0, trailing = 0;
-  while (start < alternative.length && alternative[start] === 'N') start++;
-  if (start === alternative.length) return { distance: 0, differences: [], coverage: { start: 0, end: 0 } };
-  while (alternative[alternative.length - trailing - 1] === 'N') trailing++;
-  const core = alternative.slice(start, alternative.length - trailing);
-  // Padding fixes the coordinates when present; otherwise anchoring may clip more.
-  const refStart = Math.max(start, anchor(reference, core, false));
-  const refEnd = Math.min(reference.length - trailing, reference.length - anchor(reference, core, true));
-  if (refStart >= refEnd) throw new Error('The sample does not overlap a comparable reference span.');
-  const result = align(reference.slice(refStart, refEnd), core, limit);
-  return { ...result, coverage: { start: refStart, end: refEnd }, differences: result.differences.map(d => ({
-    ...d, start: d.start + refStart, end: d.end + refStart,
   })) };
 }
 

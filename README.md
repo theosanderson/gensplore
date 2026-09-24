@@ -43,18 +43,21 @@ selection. Without a comparison, copying uses the reference.
 Positions are 1-based reference coordinates; insertions are labelled with the
 preceding reference position (0 means before the first base).
 
-Supply one DNA FASTA record in the same orientation as the reference. This is a
-global minimum-edit alignment for related sequences, limited to 100,000 bases,
-256 inserted or deleted bases, and 5% of the compared reference in total edits.
-Substitutions are not capped at the indel limit, so divergent lineages (for example
-a SARS-CoV-2 genome several hundred substitutions from Wuhan-Hu-1) still align.
+Supply one DNA FASTA record in the same orientation as the reference, up to
+100,000 bases. It is aligned with [Nextclade](https://github.com/nextstrain/nextclade)'s
+nucleotide aligner, compiled to WebAssembly and run in the comparison worker:
+seed matches place the sample on the reference, then a banded alignment widens its
+band as needed, so large insertions and deletions and divergent lineages (for
+example a SARS-CoV-2 genome several hundred substitutions from Wuhan-Hu-1) align.
+Pages with a Content-Security-Policy must allow `'wasm-unsafe-eval'` in `script-src`.
+Samples too short or too unrelated to seed (Nextclade looks for exact matches of
+at least 40 bases) are rejected rather than aligned arbitrarily.
 
-Samples need not start at the same position as the reference or be padded: the
-sample's ends are anchored to the reference by exact unique 24-base matches, and
-reference positions outside that span are reported as missing coverage rather than
-as deletions. Terminal Ns are missing coverage in the same way, and Ns anywhere in
-the sample are treated as missing data rather than edits, so amplicon dropouts do
-not consume the edit budget; each run is reported as one ambiguous difference.
+Samples need not start at the same position as the reference or be padded:
+terminal gaps are free, and reference positions beyond the sample's ends are
+reported as missing coverage rather than as deletions. Terminal Ns are missing
+coverage in the same way, and Ns anywhere in the sample are missing data rather
+than edits; each run is reported as one ambiguous difference.
 Missing regions remain visible as coverage-gap callouts and faded reference letters
 on both nucleotide and amino-acid tracks, including partially covered codons. The drawer
 shows the covered reference range; all-N input reports no covered bases. Protein
@@ -67,11 +70,11 @@ placement is preserved; note that such files omit insertions relative to the
 reference. Other gapped records are ungapped and aligned here. Reverse
 orientations, circular rotations, and rearrangements are not handled automatically.
 
-Gap openings cost more than a single edit, so contiguous insertions/deletions stay
-together and a compensating insertion/deletion pair is not preferred over a short run
-of substitutions (which would read as a spurious frameshift). Repeat and highly
-diverged regions may still admit equally optimal gap placements, which can differ
-from those chosen by other aligners.
+As in Nextclade, gap openings within a codon of an annotated CDS cost more than
+openings between codons, so deletions in coding regions keep the reading frame
+where an equally good placement allows. Repeat and highly diverged regions may
+still admit equally optimal gap placements, which can differ from those chosen by
+other aligners or Nextclade datasets with different annotations.
 
 Ambiguous IUPAC symbols are compared literally and labelled separately
 from substitutions. Amino-acid substitutions, insertions, and deletions appear above each affected
@@ -95,3 +98,9 @@ Run the alignment tests with:
 With Node.js 24, run `npm ci` at the repository root. `npm run build` builds
 the component and website; `npm start` serves the website. Run `npm test` for
 unit tests and `npm run test:package` for packaged React compatibility checks.
+
+The aligner's WebAssembly build (from `gensplore-component/align-wasm/`, which
+pins the Nextclade commit) is committed under
+`gensplore-component/src/comparison/nextclade/`, so building needs no Rust. After
+changing the crate or bumping Nextclade, regenerate it with
+`npm run build:wasm --workspace=gensplore` (needs rustup and wasm-pack).

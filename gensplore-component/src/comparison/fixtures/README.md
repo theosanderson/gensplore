@@ -1,6 +1,6 @@
 # Comparison fixtures
 
-Public-domain INSDC records, used by `align.test.mjs` to keep the comparison honest
+Public-domain INSDC records, used by `nextclade.test.mjs` to keep the comparison honest
 against a real divergent, partially covered sample rather than only synthetic DNA.
 
 - `NC_045512.2.fasta` — SARS-CoV-2 reference (Wuhan-Hu-1).

@@ -61,7 +61,8 @@
     "test": "node --test src/comparison/*.test.mjs",
     "prepack": "npm run build",
     "test:package": "npm run build && node scripts/check-package.mjs",
-    "test:previews": "node scripts/check-previews.mjs"
+    "test:previews": "node scripts/check-previews.mjs",
+    "build:wasm": "node scripts/build-align-wasm.mjs"
   },
   "type": "module",
   "types": "./dist/index.d.ts",

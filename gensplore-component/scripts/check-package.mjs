@@ -25,9 +25,10 @@ try {
     await mkdir(join(fixture, 'public'), { recursive: true });
     await cp(join(root, '../website/public/phix174.gb'), join(fixture, 'public/reference.gb'));
     const control = await readFile(join(root, '../website/public/phix174.fasta'), 'utf8');
-    // An arbitrary single-base deletion exercises the packaged inline worker.
+    // A 400-base deletion exceeds the JavaScript aligner's band, so this exercises
+    // the embedded Nextclade WebAssembly module in the packaged inline worker.
     const sequence = control.split('\n').slice(1).join('').trim();
-    await writeFile(join(fixture, 'public/alternative.fasta'), '>Packaged phage test\n' + sequence.slice(0, 100) + sequence.slice(101) + '\n');
+    await writeFile(join(fixture, 'public/alternative.fasta'), '>Packaged phage test\n' + sequence.slice(0, 1000) + sequence.slice(1400) + '\n');
     run('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund'], fixture);
     run('npm', ['install', '--ignore-scripts', '--no-save', '--package-lock=false', '--no-audit', '--no-fund', join(temporary, pack.filename), `react@${reactVersion}`, `react-dom@${reactVersion}`, ...(reactVersion.startsWith("19") ? ["@types/react@19.2.18", "@types/react-dom@19.2.7"] : [])], fixture);
     run('npm', ['run', 'check'], fixture);
