@@ -109,9 +109,7 @@ Run the alignment tests with:
 
 Gensplore's sequence comparison is built on **[Nextclade](https://github.com/nextstrain/nextclade)**
 by the [Nextstrain](https://nextstrain.org) team (MIT license): its seeded, banded
-nucleotide aligner, codon-aware gap placement and peptide aligner do the alignment,
-and Gensplore adds the browser display. If you use these comparisons, please cite
-Nextclade:
+nucleotide aligner, codon-aware gap placement and peptide aligner are used for the alignment.
 
 > Aksamentov I, Roemer C, Hodcroft EB, Neher RA (2021). Nextclade: clade assignment,
 > mutation calling and quality control for viral genomes. *Journal of Open Source
@@ -119,10 +117,6 @@ Nextclade:
 
 Try Nextclade itself at <https://clades.nextstrain.org> for clade assignment, QC and
 much more.
-
-The license notices for Nextclade and the Rust crates compiled into the aligner are
-in [`gensplore-component/THIRD_PARTY_LICENSES.txt`](gensplore-component/THIRD_PARTY_LICENSES.txt),
-which ships in the npm package and is published with the website.
 
 ### Development
 
@@ -134,5 +128,4 @@ The aligner's WebAssembly build (from `gensplore-component/align-wasm/`, which
 pins the Nextclade commit) is committed under
 `gensplore-component/src/comparison/nextclade/`, so building needs no Rust. After
 changing the crate or bumping Nextclade, regenerate it with
-`npm run build:wasm --workspace=gensplore` (needs rustup and wasm-pack), which also
-regenerates `THIRD_PARTY_LICENSES.txt` from the crates linked into the module.
+`npm run build:wasm --workspace=gensplore` (needs rustup and wasm-pack).
