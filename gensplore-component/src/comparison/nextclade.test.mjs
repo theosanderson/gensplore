@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { parseFasta } from './fasta.mjs';
 import { compareAligned } from './aligned.mjs';
-import { alignWithNextclade, cdsSegments, loadNextclade } from './nextclade.mjs';
+import { alignWithNextclade, cdsSegments, loadNextclade, MAX_LENGTH } from './nextclade.mjs';
 import { compareProteins } from './proteins.mjs';
 import { parseReference } from './parseReference.mjs';
 
@@ -118,4 +118,18 @@ test('the bundled phiX174 FASTA aligns to its GenBank reference', async () => {
 
 test('an unrelated sequence is rejected', () => {
   assert.throws(() => alignWithNextclade(randomSequence(3000, 3), randomSequence(3000, 4)), /Could not align/);
+});
+
+test('sequences up to the length limit are aligned; longer ones are rejected', () => {
+  const reference = randomSequence(MAX_LENGTH, 13);
+  const edited = reference.slice(1000, 250000) + (reference[250000] === 'A' ? 'C' : 'A') + reference.slice(250001, 400000) + reference.slice(400300);
+  const { coverage, differences } = alignWithNextclade(reference, edited);
+  assert.deepEqual(coverage, { start: 1000, end: MAX_LENGTH });
+  assert.deepEqual(differences.map(d => d.type), ['Substitution', 'Deletion']);
+  assert.equal(differences[0].start, 250000);
+  // Bases repeated across the deletion's ends allow equally scoring placements.
+  const [deletion] = differences.slice(1);
+  assert.equal(deletion.end - deletion.start, 300);
+  assert.ok(Math.abs(deletion.start - 400000) <= 3, `deletion at ${deletion.start}`);
+  assert.throws(() => alignWithNextclade(reference + 'A', reference), /up to 500,000 bases/);
 });
