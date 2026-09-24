@@ -1,10 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { align, alignTerminalPadding, parseFasta } from './align.mjs';
+import { align, alignSample, alignTerminalPadding, parseFasta, DEFAULT_EDIT_LIMIT, SUBSTITUTION_FRACTION } from './align.mjs';
 
 test('FASTA validation and normalization', () => {
-  assert.deepEqual(parseFasta('>synthetic phage test\nacgt n\r\n'), { name: 'synthetic phage test', sequence: 'ACGTN' });
-  for (const bad of ['', 'ACGT', '>a\n', '>a\nAC-G', '>a\nACGT\n>b\nACGT']) assert.throws(() => parseFasta(bad));
+  assert.deepEqual(parseFasta('>synthetic phage test\nacgt n\r\n'), { name: 'synthetic phage test', sequence: 'ACGTN', aligned: null });
+  for (const bad of ['', 'ACGT', '>a\n', '>a\n---', '>a\nACGT\n>b\nACGT']) assert.throws(() => parseFasta(bad));
+});
+test('gapped FASTA reports both the ungapped bases and the supplied alignment', () => {
+  // Aligner output (Nextclade writes deletions as - and unsequenced ends as N).
+  assert.deepEqual(parseFasta('>aligned\nAC--gT\n'), { name: 'aligned', sequence: 'ACGT', aligned: 'AC--GT' });
+  assert.deepEqual(parseFasta('>dots\nAC..GT\n').aligned, 'AC--GT');
 });
 test('identical sequence and substitution coordinates', () => {
   assert.deepEqual(align('ACGT', 'ACGT').differences, []);
@@ -100,10 +105,15 @@ test('padding supports covered indels and preserves insertion coordinates', () =
   assert.deepEqual(result.differences, [{ type: 'Insertion', start: 5, end: 5, reference: '', alternative: 'A' }]);
   assert.deepEqual(result.coverage, { start: 2, end: 6 });
 });
-test('internal Ns and real divergence still consume the edit budget', () => {
-  assert.throws(() => alignTerminalPadding('A'.repeat(302), 'A' + 'N'.repeat(300) + 'A'), /limit/);
-  assert.throws(() => alignTerminalPadding('A'.repeat(302), 'N' + 'C'.repeat(300) + 'N'), /limit/);
+test('internal Ns are missing data, not edits, and group into one difference', () => {
+  // Amplicon dropouts run to thousands of bases and must not exhaust the budget.
+  const result = alignTerminalPadding('A'.repeat(3002), 'A' + 'N'.repeat(3000) + 'A');
+  assert.equal(result.distance, 0);
+  assert.deepEqual(result.differences.map(d => [d.type, d.start, d.end]), [['Ambiguous', 1, 3001]]);
   assert.deepEqual(alignTerminalPadding('ACGT', 'ANGT').differences, align('ACGT', 'ANGT').differences);
+});
+test('real divergence still consumes the edit budget', () => {
+  assert.throws(() => alignTerminalPadding('A'.repeat(302), 'N' + 'C'.repeat(300) + 'N'), /limit/);
 });
 test('all-N input has no coverage; validation runs before trimming', () => {
   assert.deepEqual(alignTerminalPadding('ACGT', 'NNNN'), { distance: 0, differences: [], coverage: { start: 0, end: 0 } });
@@ -113,10 +123,88 @@ test('all-N input has no coverage; validation runs before trimming', () => {
 });
 
 
-test('default DNA limit accepts 256 edits and rejects 257, including padded input', () => {
-  for (const compare of [align, alignTerminalPadding]) {
-    assert.equal(compare('A'.repeat(256), 'C'.repeat(256)).distance, 256);
-    assert.throws(() => compare('A'.repeat(257), 'C'.repeat(257)), /256-edit/);
+test('substitutions are limited by a share of the reference, not the indel limit', () => {
+  // Divergent lineages carry far more than DEFAULT_EDIT_LIMIT substitutions.
+  const length = 20000, substitutions = 400;
+  assert.ok(substitutions > DEFAULT_EDIT_LIMIT);
+  const reference = 'A'.repeat(length);
+  const alternative = ('A'.repeat(length - substitutions) + 'C'.repeat(substitutions));
+  assert.equal(align(reference, alternative).distance, substitutions);
+  // Unrelated sequences of the same length still fail rather than aligning.
+  const budget = Math.floor(length * SUBSTITUTION_FRACTION);
+  assert.throws(() => align(reference, 'A'.repeat(length - budget - 1) + 'C'.repeat(budget + 1)), /limit/);
+});
+test('inserted and deleted bases remain capped by the limit', () => {
+  for (const compare of [align, alignTerminalPadding, alignSample]) {
+    assert.equal(compare('A'.repeat(300), 'A'.repeat(300 - 256)).distance, 256);
+    assert.throws(() => compare('A'.repeat(300), 'A'.repeat(300 - 257)), /limit/);
   }
-  assert.equal(alignTerminalPadding('G' + 'A'.repeat(256) + 'G', 'N' + 'C'.repeat(256) + 'N').distance, 256);
+});
+
+test('unpadded partial samples are anchored instead of counted as terminal edits', () => {
+  // GISAID and INSDC records usually start and end partway into the reference.
+  let seed = 7;
+  // Low LCG bits cycle with a short period; take high bits so the sequence is not repetitive.
+  const random = n => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return (seed >>> 16) % n; };
+  const reference = Array.from({ length: 4000 }, () => 'ACGT'[random(4)]).join('');
+  const start = 300, end = 3700;
+  const sample = reference.slice(start, end);
+  const result = alignSample(reference, sample);
+  assert.deepEqual(result.coverage, { start, end });
+  assert.deepEqual(result.differences, []);
+  // A substitution inside the covered span keeps reference coordinates.
+  const edited = sample.slice(0, 100) + (sample[100] === 'A' ? 'C' : 'A') + sample.slice(101);
+  const changed = alignSample(reference, edited);
+  assert.equal(changed.differences.length, 1);
+  assert.equal(changed.differences[0].start, start + 100);
+});
+test('anchoring tolerates terminal Ns and ambiguity at the sample ends', () => {
+  let seed = 11;
+  // Low LCG bits cycle with a short period; take high bits so the sequence is not repetitive.
+  const random = n => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return (seed >>> 16) % n; };
+  const reference = Array.from({ length: 2000 }, () => 'ACGT'[random(4)]).join('');
+  const start = 500;
+  const sample = 'N'.repeat(40) + reference.slice(start + 40, 1500);
+  const result = alignSample(reference, sample);
+  assert.deepEqual(result.coverage, { start: start + 40, end: 1500 });
+});
+test('a sample that does not match the reference is rejected, not anchored', () => {
+  let seed = 3;
+  // Low LCG bits cycle with a short period; take high bits so the sequence is not repetitive.
+  const random = n => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return (seed >>> 16) % n; };
+  const reference = Array.from({ length: 3000 }, () => 'ACGT'[random(4)]).join('');
+  const unrelated = Array.from({ length: 3000 }, () => 'ACGT'[random(4)]).join('');
+  assert.throws(() => alignSample(reference, unrelated), /limit/);
+});
+
+// A real divergent, partially covered sample: PJ.2.1 (a BA.3.2 descendant) against
+// Wuhan-Hu-1. Raw INSDC records like this one motivated anchoring and the N handling.
+test('a divergent SARS-CoV-2 sample aligns in raw and pre-aligned form', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const read = async name => readFile(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
+  const { compareAligned } = await import('./aligned.mjs');
+  const reference = parseFasta(await read('NC_045512.2.fasta')).sequence;
+  assert.equal(reference.length, 29903);
+
+  const raw = parseFasta(await read('QB007131.fasta'));
+  assert.equal(raw.aligned, null);
+  const result = alignSample(reference, raw.sequence);
+  // The sample is shorter than the reference and carries no terminal N padding,
+  // so only anchoring keeps its unsequenced ends out of the edit budget.
+  assert.ok(raw.sequence.length < reference.length);
+  assert.ok(!/^N|N$/.test(raw.sequence));
+  assert.ok(result.coverage.start > 0 && result.coverage.end < reference.length);
+  const substitutions = result.differences.filter(d => d.type === 'Substitution').length;
+  assert.ok(substitutions > DEFAULT_EDIT_LIMIT / 2, `expected a divergent sample, saw ${substitutions} substitutions`);
+
+  // The Nextclade alignment of the same sample is used exactly as supplied.
+  const nextclade = parseFasta(await read('QB007131.nextclade-aligned.fasta'));
+  assert.equal(nextclade.aligned.length, reference.length);
+  const supplied = compareAligned(reference, { ...nextclade, sequence: nextclade.aligned });
+  assert.deepEqual(supplied.coverage, result.coverage);
+  const positions = r => new Set(r.differences.filter(d => d.type === 'Substitution').map(d => d.start));
+  const ours = positions(result), theirs = positions(supplied);
+  const shared = [...ours].filter(p => theirs.has(p)).length;
+  // Gap placement in diverged repeats may differ, but the substitutions agree closely.
+  assert.ok(shared / theirs.size > 0.95, `only ${shared} of ${theirs.size} substitutions agreed`);
 });

@@ -101,7 +101,8 @@ export function compareProtein(reference, feature, differences, coverage) {
         while (leading < refPeptide.length && uncovered(leading)) leading++;
         while (trailing < refPeptide.length - leading && uncovered(refPeptide.length - trailing - 1)) trailing++;
       }
-      const result = coverage ? alignTerminalPadding(refPeptide, altPeptide, 'X', DEFAULT_EDIT_LIMIT, { leading, trailing }) : align(refPeptide, altPeptide);
+      // N is asparagine, so the unknown residue must be given explicitly as X.
+      const result = coverage ? alignTerminalPadding(refPeptide, altPeptide, 'X', DEFAULT_EDIT_LIMIT, { leading, trailing }) : align(refPeptide, altPeptide, DEFAULT_EDIT_LIMIT, 'X');
       const grouped = [];
       for (const difference of result.differences) {
         const change = { ...difference,

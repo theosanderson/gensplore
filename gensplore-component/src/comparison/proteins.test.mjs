@@ -148,3 +148,13 @@ test('AA comparison uses the 256-edit boundary with and without coverage', () =>
     }
   }
 });
+
+test('asparagine is compared literally, not treated as missing data', () => {
+  // N is a valid residue; only X marks an unknown one.
+  const reference = 'ATGAAATAA';
+  const differences = [{ type: 'Substitution', start: 5, end: 6, reference: 'A', alternative: 'T' }];
+  const result = compareProtein(reference, feature(reference), differences);
+  assert.equal(result.changes.length, 1);
+  assert.equal(result.changes[0].type, 'Substitution');
+  assert.equal(result.changes[0].alternative, 'N');
+});
